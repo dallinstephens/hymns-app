@@ -1,0 +1,149 @@
+.container {
+    max-width: 800px;
+    margin: 40px auto;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  .page-header {
+    border-bottom: 1px solid #e7e7e7;
+    padding-bottom: 20px;
+    margin-bottom: 30px;
+  }
+  
+  .page-header h1 {
+    color: #202124;
+    font-size: 32px;
+    font-weight: 400;
+    margin: 0 0 8px 0;
+  }
+  
+  .form-group {
+    margin-bottom: 24px;
+  }
+  
+  .form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #202124;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  
+  .text-danger {
+    color: #d93025;
+  }
+  
+  .help-block {
+    color: #5f6368;
+    font-size: 12px;
+    margin-top: 4px;
+  }
+  
+  .form-control {
+    border-radius: 4px;
+    border: 1px solid #dadce0;
+    font-size: 14px;
+  }
+  
+  .form-control:focus {
+    border-color: #1a73e8;
+    outline: none;
+    box-shadow: 0 0 0 1px #1a73e8;
+  }
+  
+  .radio, .checkbox {
+    margin-bottom: 8px;
+  }
+  
+  .radio label, .checkbox label {
+    font-weight: normal;
+    cursor: pointer;
+  }
+  
+  .btn-primary {
+    background-color: #1a73e8;
+    border-color: #1a73e8;
+  }
+  
+  .btn-primary:hover {
+    background-color: #1765cc;
+    border-color: #1765cc;
+  }
+  
+  .alert {
+    padding: 15px;
+    margin-bottom: 20px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+  }
+  .alert-success {
+    color: #3c763d;
+    background-color: #dff0d8;
+    border-color: #d6e9c6;
+  }
+  .alert-danger {
+    color: #a94442;
+    background-color: #f2dede;
+    border-color: #ebccd1;
+  }
+  .alert-info {
+    color: #31708f;
+    background-color: #d9edf7;
+    border-color: #bce8f1;
+  }
+
+  /* Container for the loader */
+.loading-container {
+    text-align: center;
+    padding: 30px;
+    background: #ffffff;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    margin: 20px 0;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  }
+  
+  /* The Spinning Wheel */
+  .spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid #007bff; /* Primary Blue */
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    display: inline-block;
+    margin-bottom: 15px;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  /* The Animated Progress Bar */
+  .progress-bar-container {
+    height: 10px;
+    width: 100%;
+    background-color: #e9ecef;
+    border-radius: 5px;
+    overflow: hidden;
+    position: relative;
+    margin-top: 15px;
+  }
+  
+  .progress-bar-value {
+    width: 35%;
+    height: 100%;
+    background-color: #007bff;
+    border-radius: 5px;
+    position: absolute;
+    animation: loading-pulse 2s infinite ease-in-out;
+  }
+  
+  @keyframes loading-pulse {
+    0% { left: -35%; }
+    100% { left: 100%; }
+  }
