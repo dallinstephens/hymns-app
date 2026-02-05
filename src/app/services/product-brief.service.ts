@@ -56,7 +56,7 @@ export interface ProductBriefForm {
 })
 export class ProductBriefService {
   // Use your real URL here
-  private apiUrl = 'https://script.google.com/macros/s/AKfycbzr1HNWm6W-2qbkIBv1g3A0q01AL386cPUT3JklWR1On_oOCzMna_7jRwYEwBq26Zg8ug/exec';
+  private apiUrl = 'https://script.google.com/macros/s/AKfycbyNAMIo3pK6XfS02bfWgXiR89g_BwBBsrLX6MqAJrSV3aW69zGMQkkZ4HMTwwkCQpC2AQ/exec';
 
   constructor(private http: HttpClient) {}
 
