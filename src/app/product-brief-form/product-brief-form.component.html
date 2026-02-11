@@ -1,7 +1,6 @@
 <div class="container">
     <div class="page-header">
-      <h1>Product Brief</h1>
-      <p class="text-muted">The name, email, and photo associated with your Google account will be recorded when you upload files and submit this form</p>
+      <h1>Product Page Generator</h1>
     </div>
   
     <div *ngIf="submitSuccess" class="alert alert-success">
@@ -17,7 +16,7 @@
       <!-- SKU -->
       <div class="form-group">
         <label for="sku">SKU <span class="text-danger">*</span></label>
-        <input type="text" class="form-control" id="sku" formControlName="sku" placeholder="Your answer" value="01964">
+        <input type="text" class="form-control" id="sku" formControlName="sku" placeholder="Your answer">
       </div>
   
       <!-- Title -->
@@ -299,7 +298,7 @@
 
       <div *ngIf="isSubmitting" class="loading-container">
         <div class="spinner"></div>
-        <p>🚀 <strong>Uploading files & saving to Google Drive...</strong></p>
+        <p>🚀 <strong>Creating Product Page...</strong></p>
         <p class="small text-muted">This may take a minute depending on your file sizes.</p>
         
         <div class="progress-bar-container">

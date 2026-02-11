@@ -1,16 +1,14 @@
+
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, FormArray, ReactiveFormsModule } from '@angular/forms';
 import { ProductBriefService, ProductBriefForm } from '../services/product-brief.service';
-import { CommonModule } from '@angular/common';
+// import { CommonModule } from '@angular/common';
 import { firstValueFrom } from 'rxjs';
+// import { HttpClientModule, HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-product-brief-form',
-  standalone: true,
-  imports: [
-    ReactiveFormsModule, 
-    CommonModule // Add this to allow *ngFor and *ngIf in your HTML
-  ], 
+  standalone: false, // <--- Change this to false
   templateUrl: './product-brief-form.component.html',
   styleUrls: ['./product-brief-form.component.css']
 })
@@ -238,7 +236,7 @@ export class ProductBriefFormComponent implements OnInit {
 
   ngOnInit() {
     this.productForm = this.fb.group({
-      sku: ['01964', Validators.required],
+      sku: ['01965', Validators.required],
       title: ['My Title', Validators.required],
       setting: ['Piano', Validators.required],
       settingOther: [''],
