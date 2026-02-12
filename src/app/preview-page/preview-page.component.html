@@ -1,0 +1,14 @@
+<div class="preview-container">
+    <div class="preview-header">
+      <button class="btn btn-secondary" (click)="url = ''">← Back to Form</button>
+      <span class="ms-3">Previewing: {{ url }}</span>
+    </div>
+    
+    <iframe 
+      *ngIf="safeUrl" 
+      [src]="safeUrl" 
+      width="100%" 
+      height="1000px" 
+      frameborder="0">
+    </iframe>
+  </div>

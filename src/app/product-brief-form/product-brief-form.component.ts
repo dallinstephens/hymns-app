@@ -1,232 +1,88 @@
-
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, FormArray, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms';
 import { ProductBriefService, ProductBriefForm } from '../services/product-brief.service';
-// import { CommonModule } from '@angular/common';
 import { firstValueFrom } from 'rxjs';
-// import { HttpClientModule, HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-product-brief-form',
-  standalone: false, // <--- Change this to false
+  standalone: false,
   templateUrl: './product-brief-form.component.html',
   styleUrls: ['./product-brief-form.component.css']
 })
 
 export class ProductBriefFormComponent implements OnInit {
   productForm!: FormGroup;
-  // isSubmitting: boolean = true; // Test to see spinning wheel when page loads
   isSubmitting = false;
   submitSuccess = false;
   submitError = '';
+  previewUrl = ''; // Store the Shopify link here
 
   settingOptions = [
-    'Clarinet and Piano',
-    'Organ Book',
-    'Other (please specify)',
-    'Piano',
-    'SA and Piano',
-    'SAB and Piano',
-    'SATB',
-    'SATB and Organ',
-    'SATB and Piano',
-    'SATB and Piano or Organ',
-    'SSA and Piano',
-    'SSAA Piano or Organ',
-    'SSAATTB and Piano or Organ',
-    'SSAATTBB and Organ',
-    'TB and Piano',
-    'TTBB and Organ',
-    'TTBB and Piano',
-    'TTBB and Piano or Organ',
-    'Vocal Duet',
-    'Vocal Solo',
-    'Vocal Solo Book'
+    'Clarinet and Piano', 'Organ Book', 'Other (please specify)', 'Piano',
+    'SA and Piano', 'SAB and Piano', 'SATB', 'SATB and Organ',
+    'SATB and Piano', 'SATB and Piano or Organ', 'SSA and Piano',
+    'SSAA Piano or Organ', 'SSAATTB and Piano or Organ', 'SSAATTBB and Organ',
+    'TB and Piano', 'TTBB and Organ', 'TTBB and Piano',
+    'TTBB and Piano or Organ', 'Vocal Duet', 'Vocal Solo', 'Vocal Solo Book'
   ];
 
   primaryUseOptions = [
-    'Church Choir',
-    'Congregational',
-    'Vocal Solo/Special Musical Number',
-    'Youth',
-    'Primary',
-    'Funeral Service',
-    'Concert/Festival',
-    'Home/Family Use'
+    'Church Choir', 'Congregational', 'Vocal Solo/Special Musical Number',
+    'Youth', 'Primary', 'Funeral Service', 'Concert/Festival', 'Home/Family Use'
   ];
 
   paper1Options = [
-    'First Chair Pre-printed Cover - 11 X 17',
-    'Choral - 11 X 17',
-    'Piano/Vocal - 12 X 18',
-    'Booklet Cover - 12 X 18',
-    'Booklet Inside - 12 X 18',
-    'Letter Nice - 8.5 X 11',
-    'Printer Paper - 8.5 X 11'
+    'First Chair Pre-printed Cover - 11 X 17', 'Choral - 11 X 17',
+    'Piano/Vocal - 12 X 18', 'Booklet Cover - 12 X 18', 'Booklet Inside - 12 X 18',
+    'Letter Nice - 8.5 X 11', 'Printer Paper - 8.5 X 11'
   ];
 
   paper2Options = [
-    'First Chair Pre-printed Cover - 11 X 17',
-    'Choral - 11 X 17',
-    'Piano/Vocal - 12 X 18',
-    'Booklet Cover - 12 X 18',
-    'Booklet Inside - 12 X 18',
-    'Letter Nice - 8.5 X 11',
-    'Printer Paper - 8.5 X 11'
+    'First Chair Pre-printed Cover - 11 X 17', 'Choral - 11 X 17',
+    'Piano/Vocal - 12 X 18', 'Booklet Cover - 12 X 18', 'Booklet Inside - 12 X 18',
+    'Letter Nice - 8.5 X 11', 'Printer Paper - 8.5 X 11'
   ];
 
-  difficultyOptions = [
-    'Beginning',
-    'Early Intermediate',
-    'Intermediate',
-    'Late Intermediate',
-    'Advanced'
-  ];
+  difficultyOptions = ['Beginning', 'Early Intermediate', 'Intermediate', 'Late Intermediate', 'Advanced'];
 
   tagOptions = [
-    '2-part Chorus',
-    'Choral_2-Part',
-    'Choral_A cappella',
-    'Choral_Cantata',
-    "Choral_Children's Chorus",
-    'Choral_Congregation',
-    'Choral_General Conference',
-    'Choral_Hymnplicity',
-    'Choral_Oratorio',
-    'Choral_SA',
-    'Choral_SATB',
-    'Choral_TB',
-    'Christmas Concert',
-    'Instrumental_Cello',
-    'Instrumental_Clarinet',
-    'Instrumental_Db Bass',
-    'Instrumental_Flute',
-    'Instrumental_Oboe',
-    'Instrumental_Other',
-    'Instrumental_Viola',
-    'Instrumental_Violin',
-    'Languages_French',
-    'Languages_German',
-    'Languages_Italian',
-    'Languages_Portuguese',
-    'Orchestral_Orchestrations',
-    'Organ_Chains',
-    'Organ_Choir',
-    'Organ_Organ/Piano Duet',
-    'Organ_Postludes',
-    'Organ_Preludes',
-    'Organ_Solos',
-    'Piano_4 Hands',
-    'Piano_Advanced',
-    'Piano_Beginner',
-    'Piano_Intermediate',
-    'Piano_Piano/Organ duet',
-    'Piano_Postludes',
-    'Piano_Preludes',
-    'Piano_Solos',
-    'Seasonal Music_Christmas',
-    'Seasonal Music_Easter',
-    "Seasonal Music_Father's Day",
-    "Seasonal Music_Mother's Day",
-    'Seasonal Music_Patriotic',
-    'Seasonal Music_Pioneer Day',
-    'Seasonal Music_Thanksgiving',
-    'Special Events_Baptism and Confirmation',
-    'Special Events_Conference (Ward',
-    'Special Events_Funeral and Memorial',
-    'Special Events_Home and Family',
-    'Special Events_Missions',
-    'Special Events_Wedding',
-    'Special Events_Primary Program',
-    'Topics_Agency',
-    'Topics_Atonement',
-    'Topics_Baptism',
-    'Topics_Book of Mormon',
-    'Topics_Brotherhood',
-    'Topics_Charity',
-    'Topics_Chastity',
-    'Topics_Children',
-    'Topics_Christmas',
-    'Topics_Comfort',
-    'Topics_Commandments',
-    'Topics_Commitment',
-    'Topics_Courage',
-    'Topics_Duty',
-    'Topics_Easter',
-    'Topics_Encouragement',
-    'Topics_Enduring to the End',
-    'Topics_Eternal Life',
-    'Topics_Example',
-    'Topics_Faith',
-    'Topics_Family',
-    'Topics_Fatherhood',
-    'Topics_Forgiveness',
-    'Topics_Funeral',
-    'Topics_Gathering of Israel',
-    'Topics_God the Father',
-    "Topics_God's Love",
-    'Topics_Gospel',
-    'Topics_Grace',
-    'Topics_Gratitude',
-    'Topics_Guidance',
-    'Topics_Holy Ghost',
-    'Topics_Home',
-    'Topics_Honesty',
-    'Topics_Hope',
-    'Topics_Humility',
-    'Topics_Jesus Christ - Birth',
-    'Topics_Jesus Christ - Creator',
-    'Topics_Jesus Christ - Example',
-    'Topics_Jesus Christ - Friend',
-    'Topics_Jesus Christ - Second Coming',
-    'Topics_Jesus Christ - Shepherd',
-    'Topics_Jesus Christ Son of God',
-    'Topics_Joy',
-    'Topics_Leadership',
-    'Topics_Love',
-    'Topics_Mercy',
-    'Topics_Millenum',
-    'Topics_Missionary Work',
-    'Topics_Motherhood',
-    'Topics_Obedience',
-    'Topics_Patience',
-    'Topics_Patriotism',
-    'Topics_Peace',
-    'Topics_Pioneers',
-    'Topics_Plan of Salvation',
-    'Topics_Praise and Worship',
-    'Topics_Prayer',
-    'Topics_Premortal Life',
-    'Topics_Preparedness',
-    'Topics_Priesthood',
-    'Topics_Prophets',
-    'Topics_Repentance',
-    'Topics_Restoration',
-    'Topics_Resurrection',
-    'Topics_Revelation',
-    'Topics_Reverence',
-    'Topics_Sabbath Day',
-    'Topics_Sacrament',
-    'Topics_Scriptures',
-    'Topics_Self Improvement',
-    'Topics_Service',
-    'Topics_Sisterhood',
-    'Topics_Spirituality',
-    'Topics_Supplication',
-    'Topics_Teaching',
-    'Topics_Temple and Family History',
-    'Topics_Testimony',
-    'Topics_Thanksgiving',
-    'Topics_Trials',
-    'Topics_Truth',
-    'Topics_Unity',
-    'Topics_Wisdom and Knowledge',
-    'Topics_Worthiness',
-    'Topics_Youth',
-    'Topics_Zion',
-    'Vocal_Duet',
-    'Vocal_Solo',
-    'Vocal_Solo W/Parts'
+    '2-part Chorus', 'Choral_2-Part', 'Choral_A cappella', 'Choral_Cantata',
+    "Choral_Children's Chorus", 'Choral_Congregation', 'Choral_General Conference',
+    'Choral_Hymnplicity', 'Choral_Oratorio', 'Choral_SA', 'Choral_SATB', 'Choral_TB',
+    'Christmas Concert', 'Instrumental_Cello', 'Instrumental_Clarinet', 'Instrumental_Db Bass',
+    'Instrumental_Flute', 'Instrumental_Oboe', 'Instrumental_Other', 'Instrumental_Viola',
+    'Instrumental_Violin', 'Languages_French', 'Languages_German', 'Languages_Italian',
+    'Languages_Portuguese', 'Orchestral_Orchestrations', 'Organ_Chains', 'Organ_Choir',
+    'Organ_Organ/Piano Duet', 'Organ_Postludes', 'Organ_Preludes', 'Organ_Solos',
+    'Piano_4 Hands', 'Piano_Advanced', 'Piano_Beginner', 'Piano_Intermediate',
+    'Piano_Piano/Organ duet', 'Piano_Postludes', 'Piano_Preludes', 'Piano_Solos',
+    'Seasonal Music_Christmas', 'Seasonal Music_Easter', "Seasonal Music_Father's Day",
+    "Seasonal Music_Mother's Day", 'Seasonal Music_Patriotic', 'Seasonal Music_Pioneer Day',
+    'Seasonal Music_Thanksgiving', 'Special Events_Baptism and Confirmation',
+    'Special Events_Conference (Ward', 'Special Events_Funeral and Memorial',
+    'Special Events_Home and Family', 'Special Events_Missions', 'Special Events_Wedding',
+    'Special Events_Primary Program', 'Topics_Agency', 'Topics_Atonement', 'Topics_Baptism',
+    'Topics_Book of Mormon', 'Topics_Brotherhood', 'Topics_Charity', 'Topics_Chastity',
+    'Topics_Children', 'Topics_Christmas', 'Topics_Comfort', 'Topics_Commandments',
+    'Topics_Commitment', 'Topics_Courage', 'Topics_Duty', 'Topics_Easter', 'Topics_Encouragement',
+    'Topics_Enduring to the End', 'Topics_Eternal Life', 'Topics_Example', 'Topics_Faith',
+    'Topics_Family', 'Topics_Fatherhood', 'Topics_Forgiveness', 'Topics_Funeral',
+    'Topics_Gathering of Israel', 'Topics_God the Father', "Topics_God's Love", 'Topics_Gospel',
+    'Topics_Grace', 'Topics_Gratitude', 'Topics_Guidance', 'Topics_Holy Ghost', 'Topics_Home',
+    'Topics_Honesty', 'Topics_Hope', 'Topics_Humility', 'Topics_Jesus Christ - Birth',
+    'Topics_Jesus Christ - Creator', 'Topics_Jesus Christ - Example', 'Topics_Jesus Christ - Friend',
+    'Topics_Jesus Christ - Second Coming', 'Topics_Jesus Christ - Shepherd',
+    'Topics_Jesus Christ Son of God', 'Topics_Joy', 'Topics_Leadership', 'Topics_Love',
+    'Topics_Mercy', 'Topics_Millenum', 'Topics_Missionary Work', 'Topics_Motherhood',
+    'Topics_Obedience', 'Topics_Patience', 'Topics_Patriotism', 'Topics_Peace', 'Topics_Pioneers',
+    'Topics_Plan of Salvation', 'Topics_Praise and Worship', 'Topics_Prayer', 'Topics_Premortal Life',
+    'Topics_Preparedness', 'Topics_Priesthood', 'Topics_Prophets', 'Topics_Repentance',
+    'Topics_Restoration', 'Topics_Resurrection', 'Topics_Revelation', 'Topics_Reverence',
+    'Topics_Sabbath Day', 'Topics_Sacrament', 'Topics_Scriptures', 'Topics_Self Improvement',
+    'Topics_Service', 'Topics_Sisterhood', 'Topics_Spirituality', 'Topics_Supplication',
+    'Topics_Teaching', 'Topics_Temple and Family History', 'Topics_Testimony', 'Topics_Thanksgiving',
+    'Topics_Trials', 'Topics_Truth', 'Topics_Unity', 'Topics_Wisdom and Knowledge',
+    'Topics_Worthiness', 'Topics_Youth', 'Topics_Zion', 'Vocal_Duet', 'Vocal_Solo', 'Vocal_Solo W/Parts'
   ];
 
   constructor(
@@ -236,7 +92,7 @@ export class ProductBriefFormComponent implements OnInit {
 
   ngOnInit() {
     this.productForm = this.fb.group({
-      sku: ['01965', Validators.required],
+      sku: ['01964', Validators.required],
       title: ['My Title', Validators.required],
       setting: ['Piano', Validators.required],
       settingOther: [''],
@@ -325,10 +181,18 @@ export class ProductBriefFormComponent implements OnInit {
     }
   }
 
+  // Opens the Shopify Preview Link in a new tab
+  openPreview() {
+    if (this.previewUrl) {
+      window.open(this.previewUrl, '_blank');
+    }
+  }
+
   async onSubmit() {
     this.isSubmitting = true;
     this.submitError = '';
     this.submitSuccess = false;
+    this.previewUrl = ''; // Clear previous URL
   
     try {
       const formData: ProductBriefForm = {
@@ -337,20 +201,22 @@ export class ProductBriefFormComponent implements OnInit {
         tags: this.tagsArray.value
       };
   
-      // 1. Send the data and wait for the response string
       const responseText = await firstValueFrom(this.productBriefService.submitForm(formData));
-      
-      // 2. Parse the string back into JSON
       const result = JSON.parse(responseText);
   
       if (result.success) {
         this.submitSuccess = true;
-        this.productForm.reset();
         
-        // 3. Set a timer to hide the success message after 10 seconds
+        // Capture the link returned from the Apps Script
+        if (result.previewUrl) {
+          this.previewUrl = result.previewUrl;
+        }
+
+        // Timer to clear success state, but we keep the form data 
+        // so they can see what they previewed
         setTimeout(() => {
           this.submitSuccess = false;
-        }, 10000); 
+        }, 15000); 
   
       } else {
         this.submitError = result.error || 'The spreadsheet rejected the data.';

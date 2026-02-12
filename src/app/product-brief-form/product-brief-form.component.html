@@ -312,6 +312,13 @@
           <span *ngIf="!isSubmitting">Submit</span>
           <span *ngIf="isSubmitting">Submitting...</span>
         </button>
+        <button *ngIf="submitSuccess && previewUrl" 
+                type="button" 
+                class="btn btn-info btn-lg" 
+                (click)="openPreview()" 
+                style="margin-left: 10px;">
+          👁️ Preview Product
+        </button>
         <button type="button" class="btn btn-default btn-lg" (click)="productForm.reset()" style="margin-left: 10px;">Clear form</button>
       </div>
     </form>

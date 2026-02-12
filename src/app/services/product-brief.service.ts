@@ -49,25 +49,27 @@ export interface ProductBriefForm {
   tags: string[];
   publishDate: string;
   rowNumber?: string;
+  previewUrl?: string; // Added to interface for consistency
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class ProductBriefService {
-  // Use your real URL here
-  private apiUrl = 'https://script.google.com/macros/s/AKfycbyNAMIo3pK6XfS02bfWgXiR89g_BwBBsrLX6MqAJrSV3aW69zGMQkkZ4HMTwwkCQpC2AQ/exec';
+  private apiUrl = 'https://script.google.com/macros/s/AKfycbyyjuJIAm1o0LtQyqzDHR7TjKFJyew036gaW6Cbgwq4AI9HJwR4N5yyZxE-X28jLT4jtw/exec';
 
   constructor(private http: HttpClient) {}
 
   submitForm(formData: ProductBriefForm): Observable<any> {
     const headers = new HttpHeaders({
-      'Content-Type': 'text/plain' // Crucial: Stops the 'OPTIONS' preflight
+      'Content-Type': 'text/plain' 
     });
   
+    // We keep responseType: 'text' because Google Apps Script 
+    // redirects cause JSON parsing errors in Angular otherwise.
     return this.http.post(this.apiUrl, JSON.stringify(formData), { 
       headers,
-      responseType: 'text' // Crucial: Prevents Angular from trying to parse the redirect as JSON
+      responseType: 'text' 
     });
   }
 
@@ -100,8 +102,6 @@ export class ProductBriefService {
           canvas.height = height;
           const ctx = canvas.getContext('2d');
           ctx?.drawImage(img, 0, 0, width, height);
-          
-          // JPEG at 0.7 quality is the sweet spot for speed and looks
           resolve(canvas.toDataURL('image/jpeg', 0.7));
         };
       };
