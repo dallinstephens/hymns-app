@@ -8,12 +8,14 @@ import { AppComponent } from './app.component';
 import { ProductBriefFormComponent } from './product-brief-form/product-brief-form.component';
 import { ProductBriefService } from './services/product-brief.service';
 import { PreviewPageComponent } from './preview-page/preview-page.component';
+import { PurchaseProductPageComponent } from './purchase-product-page/purchase-product-page.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     ProductBriefFormComponent,
-    PreviewPageComponent
+    PreviewPageComponent,
+    PurchaseProductPageComponent
   ],
   imports: [
     BrowserModule,

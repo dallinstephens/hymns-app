@@ -18,7 +18,7 @@ export class ProductBriefFormComponent implements OnInit {
   previewUrl = ''; 
 
   // Controls which component/view is visible
-  viewMode: 'form' | 'preview' = 'form';
+  viewMode: 'form' | 'preview' | 'purchase' = 'form';
 
   settingOptions = [
     'Clarinet and Piano', 'Organ Book', 'Other (please specify)', 'Piano',
@@ -231,5 +231,11 @@ export class ProductBriefFormComponent implements OnInit {
       // 3. Stop the spinner so the Result View (Success/Failure) can show
       this.isSubmitting = false;
     }
+  }
+
+  openPurchase() {
+    this.viewMode = 'purchase';
+    // Standard snap to top logic
+    window.scrollTo(0, 0);
   }
 }

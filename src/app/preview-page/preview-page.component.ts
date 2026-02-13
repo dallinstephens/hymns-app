@@ -13,6 +13,7 @@ export class PreviewPageComponent implements OnInit {
   @Input() url: string = '';
 
   @Output() back = new EventEmitter<void>();
+  @Output() publish = new EventEmitter<void>();
 
   ngOnInit() {
     /**
@@ -36,5 +37,9 @@ export class PreviewPageComponent implements OnInit {
 
   onBackClick() {
     this.back.emit();
+  }
+
+  onPublishClick() {
+    this.publish.emit();
   }
 }
