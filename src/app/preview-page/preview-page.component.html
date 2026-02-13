@@ -1,14 +1,43 @@
-<div class="preview-container">
-    <div class="preview-header">
-      <button class="btn btn-secondary" (click)="url = ''">← Back to Form</button>
-      <span class="ms-3">Previewing: {{ url }}</span>
-    </div>
+<div class="pin-to-viewport">
+    <div class="outer-frame">
+      <div class="results-wrapper text-center">
     
-    <iframe 
-      *ngIf="safeUrl" 
-      [src]="safeUrl" 
-      width="100%" 
-      height="1000px" 
-      frameborder="0">
-    </iframe>
+        <div *ngIf="isLoading" class="loading-state">
+          <div class="spinner"></div>
+          <h2>🚀 Creating Product Page...</h2>
+          <p class="lead">Please wait. This may take up to a few minutes.</p>
+          
+          <div class="progress-bar-container">
+            <div class="progress-bar-value"></div>
+          </div>
+        </div>
+      
+        <div *ngIf="!isLoading && success" class="success-state">
+          <div class="icon success">✅</div>
+          <h2 class="text-success">Submission Successful!</h2>
+          <p class="lead">Your product draft is ready for review.</p>
+          
+          <div class="actions">
+            <a [href]="url" target="_blank" class="btn btn-primary btn-lg">
+              👁️ View Product Page
+            </a>
+            <button class="btn btn-default btn-lg" (click)="onBackClick()">
+              Edit Product Page
+            </button>
+          </div>
+        </div>
+      
+        <div *ngIf="!isLoading && error" class="error-state">
+          <div class="icon error">❌</div>
+          <h2 class="text-danger">Submission Failed</h2>
+          <p class="alert alert-danger">{{ error }}</p>
+          <div class="actions">
+            <button class="btn btn-warning" (click)="onBackClick()">
+              ← Go Back to Fix Form
+            </button>
+          </div>
+        </div>
+    
+      </div>
+    </div>
   </div>

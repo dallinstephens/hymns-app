@@ -1,108 +1,99 @@
 .container {
-    max-width: 800px;
-    margin: 40px auto;
-    padding: 20px;
-    background-color: rgb(252, 234, 225);
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  }
-  
-  .page-header {
-    border-bottom: 1px solid #656464;
-    padding-bottom: 20px;
-    margin-bottom: 30px;
-  }
-  
-  .page-header h1 {
-    color: #202124;
-    font-size: 32px;
-    font-weight: 400;
-    margin: 0 0 8px 0;
-  }
-  
-  .form-group {
-    margin-bottom: 24px;
-  }
-  
-  .form-group label {
-    display: block;
-    margin-bottom: 8px;
-    color: #202124;
-    font-size: 14px;
-    font-weight: 500;
-  }
-  
-  .text-danger {
-    color: #d93025;
-  }
-  
-  .help-block {
-    color: #5f6368;
-    font-size: 12px;
-    margin-top: 4px;
-  }
-  
-  .form-control {
-    border-radius: 4px;
-    border: 1px solid #dadce0;
-    font-size: 14px;
-  }
-  
-  .form-control:focus {
-    border-color: #1a73e8;
-    outline: none;
-    box-shadow: 0 0 0 1px #1a73e8;
-  }
+  max-width: 800px;
+  margin: 40px auto;
+  padding: 20px;
+  background-color: rgb(252, 234, 225);
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
 
-  /* Styles the actual button inside the input */
-  input[type=file]::file-selector-button, button[type=submit] {
-    background-color: rgb(129, 36, 5);
-    color: #fff;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background 0.3s;
-  }
+.page-header {
+  border-bottom: 1px solid #656464;
+  padding-bottom: 20px;
+  margin-bottom: 30px;
+}
 
-  input[type=file]::file-selector-button:hover, button[type=submit]:hover {
-    background-color: rgb(97, 28, 5);
-  }
+.page-header h1 {
+  color: #202124;
+  font-size: 32px;
+  font-weight: 400;
+  margin: 0 0 8px 0;
+}
 
-  input[type=file]::file-selector-button:hover, button[type=submit]:hover {
-    background-color: rgb(97, 28, 5);
-  }
+.form-group {
+  margin-bottom: 24px;
+}
 
-  /* Styles the text next to the button (the "No file chosen" part) */
-  input[type=file] {
-    color: #666;
-    font-family: sans-serif;
-  }
-  
-  .radio, .checkbox {
-    margin-bottom: 8px;
-  }
-  
-  .radio label, .checkbox label {
-    font-weight: normal;
-    cursor: pointer;
-  }
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: #202124;
+  font-size: 14px;
+  font-weight: 500;
+}
 
-/* 1. Container: Move everything to the left */
+.text-danger {
+  color: #d93025;
+}
+
+.help-block {
+  color: #5f6368;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.form-control {
+  border-radius: 4px;
+  border: 1px solid #dadce0;
+  font-size: 14px;
+}
+
+.form-control:focus {
+  border-color: #1a73e8;
+  outline: none;
+  box-shadow: 0 0 0 1px #1a73e8;
+}
+
+/* Styles the actual button inside the input and the submit buttons */
+input[type=file]::file-selector-button, 
+button[type=submit], 
+.btn-primary {
+  background-color: rgb(129, 36, 5);
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+input[type=file]::file-selector-button:hover, 
+button[type=submit]:hover, 
+.btn-primary:hover {
+  background-color: rgb(97, 28, 5);
+}
+
+/* Styles the text next to the file button */
+input[type=file] {
+  color: #666;
+  font-family: sans-serif;
+}
+
+/* CUSTOM RADIOS AND CHECKBOXES */
 .radio, .checkbox {
-  margin-left: 0px; /* Pulls the whole group left; adjust as needed */
+  margin-left: 0px;
   margin-bottom: 12px;
 }
 
 .radio label, .checkbox label {
   display: flex;
   align-items: center;
-  gap: 10px;           /* Space between icon and text */
+  gap: 10px;
   cursor: pointer;
-  padding-left: 0;     /* Removes default Bootstrap padding */
+  padding-left: 0;
+  font-weight: normal;
 }
 
-/* 2. Base Input Style (Larger 24px) */
 input[type="radio"], 
 input[type="checkbox"] {
   appearance: none;
@@ -119,111 +110,38 @@ input[type="checkbox"] {
   margin: 0;
 }
 
-/* Radios stay round, Checkboxes stay slightly rounded */
 input[type="radio"] { border-radius: 50%; }
 input[type="checkbox"] { border-radius: 4px; }
 
-/* 3. The Checkmark Logic */
 input[type="radio"]:checked::before,
 input[type="checkbox"]:checked::before {
   content: "";
   width: 14px;
   height: 14px;
   background-color: #fff;
-  /* This creates the checkmark shape */
   clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
-  transform: scale(1);
 }
 
-/* 4. Background Fill on Selection */
 input[type="radio"]:checked, 
 input[type="checkbox"]:checked {
   background-color: rgb(129, 36, 5);
   border-color: rgb(129, 36, 5);
 }
 
- 
-  .btn-primary {
-    background-color: #1a73e8;
-    border-color: #1a73e8;
-  }
-  
-  .btn-primary:hover {
-    background-color: #1765cc;
-    border-color: #1765cc;
-  }
-  
-  .alert {
-    padding: 15px;
-    margin-bottom: 20px;
-    border: 1px solid transparent;
-    border-radius: 4px;
-  }
-  .alert-success {
-    color: #3c763d;
-    background-color: #dff0d8;
-    border-color: #d6e9c6;
-  }
-  .alert-danger {
-    color: #a94442;
-    background-color: #f2dede;
-    border-color: #ebccd1;
-  }
-  .alert-info {
-    color: #31708f;
-    background-color: #d9edf7;
-    border-color: #bce8f1;
-  }
-
-  /* Container for the loader */
-.loading-container {
-    text-align: center;
-    padding: 30px;
-    background: #ffffff;
-    border: 2px solid #e9ecef;
-    border-radius: 12px;
-    margin: 20px 0;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-  }
-  
-  /* The Spinning Wheel */
-  .spinner {
-    width: 50px;
-    height: 50px;
-    border: 5px solid #f3f3f3;
-    border-top: 5px solid #007bff; /* Primary Blue */
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    display: inline-block;
-    margin-bottom: 15px;
-  }
-  
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-  
-  /* The Animated Progress Bar */
-  .progress-bar-container {
-    height: 10px;
-    width: 100%;
-    background-color: #e9ecef;
-    border-radius: 5px;
-    overflow: hidden;
-    position: relative;
-    margin-top: 15px;
-  }
-  
-  .progress-bar-value {
-    width: 35%;
-    height: 100%;
-    background-color: #007bff;
-    border-radius: 5px;
-    position: absolute;
-    animation: loading-pulse 2s infinite ease-in-out;
-  }
-  
-  @keyframes loading-pulse {
-    0% { left: -35%; }
-    100% { left: 100%; }
-  }
+/* ALERTS */
+.alert {
+  padding: 15px;
+  margin-bottom: 20px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+}
+.alert-success {
+  color: #3c763d;
+  background-color: #dff0d8;
+  border-color: #d6e9c6;
+}
+.alert-danger {
+  color: #a94442;
+  background-color: #f2dede;
+  border-color: #ebccd1;
+}

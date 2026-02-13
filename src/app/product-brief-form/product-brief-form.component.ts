@@ -15,7 +15,10 @@ export class ProductBriefFormComponent implements OnInit {
   isSubmitting = false;
   submitSuccess = false;
   submitError = '';
-  previewUrl = ''; // Store the Shopify link here
+  previewUrl = ''; 
+
+  // Controls which component/view is visible
+  viewMode: 'form' | 'preview' = 'form';
 
   settingOptions = [
     'Clarinet and Piano', 'Organ Book', 'Other (please specify)', 'Piano',
@@ -92,7 +95,7 @@ export class ProductBriefFormComponent implements OnInit {
 
   ngOnInit() {
     this.productForm = this.fb.group({
-      sku: ['01964', Validators.required],
+      sku: ['01968', Validators.required],
       title: ['My Title', Validators.required],
       setting: ['Piano', Validators.required],
       settingOther: [''],
@@ -181,18 +184,26 @@ export class ProductBriefFormComponent implements OnInit {
     }
   }
 
-  // Opens the Shopify Preview Link in a new tab
-  openPreview() {
-    if (this.previewUrl) {
-      window.open(this.previewUrl, '_blank');
-    }
+  // --- VIEW NAVIGATION HELPERS ---
+  
+  // Goes back to the form so you can edit details or start over
+  returnToForm() {
+    this.viewMode = 'form';
+    this.submitSuccess = false;
+    this.submitError = '';
+    this.isSubmitting = false;
+
+    // Smoothly scroll the user back to the top of the form
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   async onSubmit() {
+    // 1. Immediately switch to the preview/loading view
+    this.viewMode = 'preview';
     this.isSubmitting = true;
     this.submitError = '';
     this.submitSuccess = false;
-    this.previewUrl = ''; // Clear previous URL
+    this.previewUrl = ''; 
   
     try {
       const formData: ProductBriefForm = {
@@ -201,30 +212,23 @@ export class ProductBriefFormComponent implements OnInit {
         tags: this.tagsArray.value
       };
   
+      // 2. Perform the submission
       const responseText = await firstValueFrom(this.productBriefService.submitForm(formData));
       const result = JSON.parse(responseText);
   
       if (result.success) {
         this.submitSuccess = true;
-        
-        // Capture the link returned from the Apps Script
-        if (result.previewUrl) {
-          this.previewUrl = result.previewUrl;
-        }
-
-        // Timer to clear success state, but we keep the form data 
-        // so they can see what they previewed
-        setTimeout(() => {
-          this.submitSuccess = false;
-        }, 15000); 
-  
+        this.previewUrl = result.previewUrl || '';
       } else {
         this.submitError = result.error || 'The spreadsheet rejected the data.';
+        // Optional: you could stay in 'preview' to show the error, 
+        // which matches your request for a success/failure view.
       }
     } catch (error) {
       this.submitError = 'Network error! Please check your connection and try again.';
       console.error('Submit error:', error);
     } finally {
+      // 3. Stop the spinner so the Result View (Success/Failure) can show
       this.isSubmitting = false;
     }
   }

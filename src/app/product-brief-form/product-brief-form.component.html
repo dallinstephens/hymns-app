@@ -1,31 +1,26 @@
 <div class="container">
+  
+  <div *ngIf="viewMode === 'form'">
     <div class="page-header">
       <h1>Product Page Generator</h1>
     </div>
-  
-    <div *ngIf="submitSuccess" class="alert alert-success">
-      <strong>Success!</strong> Form submitted successfully.
-    </div>
-  
+
     <div *ngIf="submitError" class="alert alert-danger">
       <strong>Error!</strong> {{submitError}}
     </div>
-  
+
     <form [formGroup]="productForm" (ngSubmit)="onSubmit()">
       
-      <!-- SKU -->
       <div class="form-group">
         <label for="sku">SKU <span class="text-danger">*</span></label>
         <input type="text" class="form-control" id="sku" formControlName="sku" placeholder="Your answer">
       </div>
-  
-      <!-- Title -->
+
       <div class="form-group">
         <label for="title">Title <span class="text-danger">*</span></label>
         <input type="text" class="form-control" id="title" formControlName="title" placeholder="Your answer">
       </div>
-  
-      <!-- Setting -->
+
       <div class="form-group">
         <label for="setting">Setting</label>
         <select class="form-control" id="setting" formControlName="setting">
@@ -33,77 +28,61 @@
           <option *ngFor="let option of settingOptions" [value]="option">{{option}}</option>
         </select>
       </div>
-  
-      <!-- Setting Other -->
+
       <div class="form-group" *ngIf="productForm.get('setting').value === 'Other (please specify)'">
         <label for="settingOther">Please specify other setting:</label>
         <input type="text" class="form-control" id="settingOther" formControlName="settingOther" placeholder="Your answer">
       </div>
-  
-      <!-- Artist Name -->
+
       <div class="form-group">
         <label for="artistName">Artist Name</label>
         <input type="text" class="form-control" id="artistName" formControlName="artistName" placeholder="Your answer">
       </div>
-  
-      <!-- Upload Cover Image -->
+
       <div class="form-group">
         <label>Upload Cover Image</label>
         <p class="help-block">Upload 1 supported file. Max 100 MB.</p>
         <input type="file" (change)="onFileSelect($event, 'coverImage')" accept="image/*">
       </div>
-  
-      <!-- Upload Audio File -->
+
       <div class="form-group">
         <label>Upload Audio File</label>
         <p class="help-block">Upload 1 supported file audio. Max 1 GB.</p>
         <input type="file" (change)="onFileSelect($event, 'audioFile')" accept="audio/*">
       </div>
-  
-      <!-- Enter YouTube Link -->
+
       <div class="form-group">
         <label for="youtubeLink">Enter YouTube Link</label>
         <input type="text" class="form-control" id="youtubeLink" formControlName="youtubeLink" placeholder="Your answer">
       </div>
-  
-      <!-- Original Composer -->
+
       <div class="form-group">
         <label for="originalComposer">Original Composer</label>
         <input type="text" class="form-control" id="originalComposer" formControlName="originalComposer" placeholder="Your answer">
       </div>
-  
-      <!-- Source Title -->
+
       <div class="form-group">
         <label for="sourceTitle">Source Title</label>
         <input type="text" class="form-control" id="sourceTitle" formControlName="sourceTitle" placeholder="Your answer">
       </div>
-  
-      <!-- Church Owned -->
+
       <div class="form-group">
         <label>Is any portion of this product published by or owned by the Church (IRI)? <span class="text-danger">*</span></label>
         <div class="radio">
-          <label>
-            <input type="radio" formControlName="churchOwned" value="Yes"> Yes
-          </label>
+          <label><input type="radio" formControlName="churchOwned" value="Yes"> Yes</label>
         </div>
         <div class="radio">
-          <label>
-            <input type="radio" formControlName="churchOwned" value="No"> No
-          </label>
+          <label><input type="radio" formControlName="churchOwned" value="No"> No</label>
         </div>
       </div>
-  
-      <!-- Primary Intended Use -->
+
       <div class="form-group">
         <label>Primary Intended Use (select one)</label>
         <div class="radio" *ngFor="let option of primaryUseOptions">
-          <label>
-            <input type="radio" formControlName="primaryUse" [value]="option"> {{option}}
-          </label>
+          <label><input type="radio" formControlName="primaryUse" [value]="option"> {{option}}</label>
         </div>
       </div>
-  
-      <!-- Paper 1: For Price Calculation -->
+
       <div class="form-group">
         <label>Paper 1: For Price Calculation</label>
         <select class="form-control" formControlName="paper1Calculation">
@@ -111,14 +90,12 @@
           <option *ngFor="let option of paper1Options" [value]="option">{{option}}</option>
         </select>
       </div>
-  
-      <!-- Paper 1 Sheet Count -->
+
       <div class="form-group">
         <label for="paper1SheetCount">Paper 1 Sheet Count</label>
         <input type="text" class="form-control" id="paper1SheetCount" formControlName="paper1SheetCount" placeholder="Your answer">
       </div>
-  
-      <!-- Paper 2: For Price Calculation -->
+
       <div class="form-group">
         <label>Paper 2: For Price Calculation</label>
         <select class="form-control" formControlName="paper2Calculation">
@@ -126,208 +103,153 @@
           <option *ngFor="let option of paper2Options" [value]="option">{{option}}</option>
         </select>
       </div>
-  
-      <!-- Paper 2 Sheet Count -->
+
       <div class="form-group">
         <label for="paper2SheetCount">Paper 2 Sheet Count</label>
         <input type="text" class="form-control" id="paper2SheetCount" formControlName="paper2SheetCount" placeholder="Your answer">
       </div>
-  
-      <!-- Ink (Black and White/Page): Enter Quantity -->
+
       <div class="form-group">
         <label for="inkBlackWhite">Ink (Black and White/Page): Enter Quantity</label>
         <input type="text" class="form-control" id="inkBlackWhite" formControlName="inkBlackWhite" placeholder="Your answer">
       </div>
-  
-      <!-- Ink (Color/Page): Enter Quantity -->
+
       <div class="form-group">
         <label for="inkColor">Ink (Color/Page): Enter Quantity</label>
         <input type="text" class="form-control" id="inkColor" formControlName="inkColor" placeholder="Your answer">
       </div>
-  
-      <!-- Include Saddle Stitch (2 Staples) -->
+
       <div class="form-group">
         <label>Include Saddle Stitch (2 Staples)</label>
         <div class="radio">
-          <label>
-            <input type="radio" formControlName="includeSaddleStitch" value="Yes"> Yes
-          </label>
+          <label><input type="radio" formControlName="includeSaddleStitch" value="Yes"> Yes</label>
         </div>
         <div class="radio">
-          <label>
-            <input type="radio" formControlName="includeSaddleStitch" value="No"> No
-          </label>
+          <label><input type="radio" formControlName="includeSaddleStitch" value="No"> No</label>
         </div>
       </div>
-  
-      <!-- Description Paragraph 1 -->
+
       <div class="form-group">
         <label for="descriptionParagraph1">Description Paragraph 1</label>
         <textarea class="form-control" id="descriptionParagraph1" formControlName="descriptionParagraph1" rows="3" placeholder="Your answer"></textarea>
       </div>
-  
-      <!-- Description Paragraph 2 -->
+
       <div class="form-group">
         <label for="descriptionParagraph2">Description Paragraph 2</label>
         <textarea class="form-control" id="descriptionParagraph2" formControlName="descriptionParagraph2" rows="3" placeholder="Your answer"></textarea>
       </div>
-  
-      <!-- Titles included -->
+
       <div class="form-group">
-        <label for="titlesIncluded">Titles included (please separate each title by a semicolon). Example: A Poor Wayfaring Man of Grief; Each Life That Touches Ours for Good; I'm Trying to Be like Jesus</label>
+        <label for="titlesIncluded">Titles included (semicolon separated):</label>
         <textarea class="form-control" id="titlesIncluded" formControlName="titlesIncluded" rows="3" placeholder="Your answer"></textarea>
       </div>
-  
-      <!-- Composer(s) -->
+
       <div class="form-group">
         <label for="composers">Composer(s):</label>
         <input type="text" class="form-control" id="composers" formControlName="composers" placeholder="Your answer">
       </div>
-  
-      <!-- Arranger(s) -->
+
       <div class="form-group">
         <label for="arrangers">Arranger(s):</label>
         <input type="text" class="form-control" id="arrangers" formControlName="arrangers" placeholder="Your answer">
       </div>
-  
-      <!-- Lyricist(s) -->
+
       <div class="form-group">
         <label for="lyricists">Lyricist(s):</label>
         <input type="text" class="form-control" id="lyricists" formControlName="lyricists" placeholder="Your answer">
       </div>
-  
-      <!-- Difficulty -->
+
       <div class="form-group">
-        <label>Difficulty: (please check all that apply)</label>
+        <label>Difficulty:</label>
         <div class="checkbox" *ngFor="let option of difficultyOptions">
-          <label>
-            <input type="checkbox" (change)="onDifficultyChange(option, $event)"> {{option}}
-          </label>
+          <label><input type="checkbox" (change)="onDifficultyChange(option, $event)"> {{option}}</label>
         </div>
       </div>
-  
-      <!-- Performance time -->
+
       <div class="form-group">
-        <label for="performanceTime">Performance time (example: approximately 2:50):</label>
+        <label for="performanceTime">Performance time:</label>
         <input type="text" class="form-control" id="performanceTime" formControlName="performanceTime" placeholder="Your answer">
       </div>
-  
-      <!-- Scripture Reference(s) -->
+
       <div class="form-group">
-        <label for="scriptureReferences">Scripture Reference(s) (example: John 3:16):</label>
+        <label for="scriptureReferences">Scripture Reference(s):</label>
         <input type="text" class="form-control" id="scriptureReferences" formControlName="scriptureReferences" placeholder="Your answer">
       </div>
-  
-      <!-- Weight -->
+
       <div class="form-group">
-        <label for="weight">Weight (in ounces): This will automatically be computed upon form submission if paper types and quantities are entered. Leave blank.</label>
+        <label for="weight">Weight (in ounces):</label>
         <input type="text" class="form-control" id="weight" formControlName="weight" placeholder="Your answer">
       </div>
 
-      <!-- Offer Coil Binding -->
       <div class="form-group">
         <label>Offer Coil Binding <span class="text-danger">*</span></label>
         <div class="radio">
-          <label>
-            <input type="radio" formControlName="offerCoilBinding" value="Yes"> Yes
-          </label>
+          <label><input type="radio" formControlName="offerCoilBinding" value="Yes"> Yes</label>
         </div>
         <div class="radio">
-          <label>
-            <input type="radio" formControlName="offerCoilBinding" value="No"> No
-          </label>
+          <label><input type="radio" formControlName="offerCoilBinding" value="No"> No</label>
         </div>
       </div>
 
-      <!-- Offer Digital Copy -->
       <div class="form-group">
         <label>Offer Digital Copy <span class="text-danger">*</span></label>
         <div class="radio">
-          <label>
-            <input type="radio" formControlName="offerDigitalCopy" value="Yes"> Yes
-          </label>
+          <label><input type="radio" formControlName="offerDigitalCopy" value="Yes"> Yes</label>
         </div>
         <div class="radio">
-          <label>
-            <input type="radio" formControlName="offerDigitalCopy" value="No"> No
-          </label>
+          <label><input type="radio" formControlName="offerDigitalCopy" value="No"> No</label>
         </div>
       </div>
 
-      <!-- Digital Copy File Upload -->
       <div class="form-group" *ngIf="productForm.get('offerDigitalCopy').value === 'Yes'">
         <label>Digital Copy File Upload (pdf):</label>
-        <p class="help-block">Upload 1 supported file. PDF. Max 1 GB.</p>
         <input type="file" (change)="onFileSelect($event, 'digitalCopy')" accept=".pdf">
       </div>
 
-      <!-- Soundcloud Link -->
       <div class="form-group">
         <label for="soundcloudLink">Soundcloud Link (optional)</label>
         <input type="text" class="form-control" id="soundcloudLink" formControlName="soundcloudLink" placeholder="Your answer">
       </div>
 
-      <!-- Thumbnail Images 1-10 -->
       <div class="form-group" *ngFor="let num of [1,2,3,4,5,6,7,8,9,10]">
         <label>Thumbnail Image {{num}} (optional)</label>
-        <p class="help-block">Upload 1 supported file. image. Max 100 MB.</p>
         <input type="file" (change)="onFileSelect($event, 'thumbnail' + num)" accept="image/*">
       </div>
 
-      <!-- Tags -->
       <div class="form-group">
-        <label>Tags: (check all that apply) - This helps customers find your product.</label>
+        <label>Tags:</label>
         <div class="checkbox" *ngFor="let option of tagOptions">
-          <label>
-            <input type="checkbox" (change)="onTagChange(option, $event)"> {{option}}
-          </label>
+          <label><input type="checkbox" (change)="onTagChange(option, $event)"> {{option}}</label>
         </div>
       </div>
 
-      <!-- Publish Date -->
       <div class="form-group">
         <label for="publishDate">Publish Date</label>
         <input type="date" class="form-control" id="publishDate" formControlName="publishDate">
       </div>
 
-      <!-- Row Number -->
       <div class="form-group">
-        <label for="rowNumber">This is the row number you just clicked from the Publish sheet. The row number is used to populate data in the publish sheet row. Do not change unless you want to populate the data in a different row in the Publish sheet.</label>
+        <label for="rowNumber">Row Number:</label>
         <input type="text" class="form-control" id="rowNumber" formControlName="rowNumber" placeholder="Your answer">
       </div>
 
-      <div *ngIf="isSubmitting" class="loading-container">
-        <div class="spinner"></div>
-        <p>🚀 <strong>Creating Product Page...</strong></p>
-        <p class="small text-muted">This may take a minute depending on your file sizes.</p>
-        
-        <div class="progress-bar-container">
-          <div class="progress-bar-value"></div>
-        </div>
-      </div>      
-
-      <!-- Submit Button -->
       <div class="form-group">
         <button type="submit" class="btn btn-primary btn-lg" [disabled]="isSubmitting">
-          <span *ngIf="!isSubmitting">Submit</span>
-          <span *ngIf="isSubmitting">Submitting...</span>
-        </button>
-        <button *ngIf="submitSuccess && previewUrl" 
-                type="button" 
-                class="btn btn-info btn-lg" 
-                (click)="openPreview()" 
-                style="margin-left: 10px;">
-          👁️ Preview Product
+          Submit
         </button>
         <button type="button" class="btn btn-default btn-lg" (click)="productForm.reset()" style="margin-left: 10px;">Clear form</button>
       </div>
     </form>
-    
-    <div *ngIf="submitSuccess" class="alert alert-success">
-      ✅ Success! Your submission was successful!
-    </div>
-    
-    <div *ngIf="submitError" class="alert alert-danger">
-      ❌ Failure! {{ submitError }}
-    </div>
+  </div>
+
+  <div *ngIf="viewMode === 'preview'">
+    <app-preview-page 
+      [isLoading]="isSubmitting"
+      [success]="submitSuccess"
+      [error]="submitError"
+      [url]="previewUrl"
+      (back)="returnToForm()">
+    </app-preview-page>
+  </div>
+
 </div>
