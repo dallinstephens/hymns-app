@@ -246,10 +246,8 @@
     <app-preview-page 
       [isLoading]="isSubmitting"
       [success]="submitSuccess"
-      [error]="submitError"
       [url]="previewUrl"
-      (back)="returnToForm()"
-      (publish)="viewMode = 'purchase'">
+      [customerEmail]="customerEmail" (back)="returnToForm()">
     </app-preview-page>
   </div>
 

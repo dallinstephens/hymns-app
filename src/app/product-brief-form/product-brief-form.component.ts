@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms';
 import { ProductBriefService, ProductBriefForm } from '../services/product-brief.service';
 import { firstValueFrom } from 'rxjs';
+import { ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'app-product-brief-form',
@@ -15,7 +16,8 @@ export class ProductBriefFormComponent implements OnInit {
   isSubmitting = false;
   submitSuccess = false;
   submitError = '';
-  previewUrl = ''; 
+  previewUrl = '';
+  customerEmail: string = ''; 
 
   // Controls which component/view is visible
   viewMode: 'form' | 'preview' | 'purchase' = 'form';
@@ -90,10 +92,13 @@ export class ProductBriefFormComponent implements OnInit {
 
   constructor(
     private fb: FormBuilder,
-    private productBriefService: ProductBriefService
+    private productBriefService: ProductBriefService,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit() {
+    this.customerEmail = this.route.snapshot.queryParamMap.get('email') || '';
+
     this.productForm = this.fb.group({
       sku: ['01968', Validators.required],
       title: ['My Title', Validators.required],

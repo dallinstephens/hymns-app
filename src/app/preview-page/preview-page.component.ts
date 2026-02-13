@@ -11,9 +11,9 @@ export class PreviewPageComponent implements OnInit {
   @Input() error: string = '';
   @Input() success: boolean = false;
   @Input() url: string = '';
+  @Input() customerEmail: string = '';
 
   @Output() back = new EventEmitter<void>();
-  @Output() publish = new EventEmitter<void>();
 
   ngOnInit() {
     /**
@@ -40,6 +40,21 @@ export class PreviewPageComponent implements OnInit {
   }
 
   onPublishClick() {
-    this.publish.emit();
+    // Use the Variant ID from your admin link
+    const variantId = '52656836149548'; 
+    
+    // Use the domain you identified
+    const shopDomain = '7iyyfy-u5.myshopify.com';
+  
+    // Include the customer's email if we have it to pre-fill the checkout form
+    const emailParam = this.customerEmail 
+      ? `?checkout[email]=${encodeURIComponent(this.customerEmail)}` 
+      : '';
+  
+    // This link bypasses the cart and goes straight to the payment info screen
+    const checkoutUrl = `https://${shopDomain}/cart/${variantId}:1${emailParam}`;
+  
+    // Redirect the user to the Shopify Checkout
+    window.location.href = checkoutUrl;
   }
 }
