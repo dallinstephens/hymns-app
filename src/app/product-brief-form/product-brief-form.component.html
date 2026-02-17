@@ -29,7 +29,7 @@
         </select>
       </div>
 
-      <div class="form-group" *ngIf="productForm.get('setting').value === 'Other (please specify)'">
+      <div class="form-group" *ngIf="productForm.get('setting')?.value === 'Other (please specify)'">
         <label for="settingOther">Please specify other setting:</label>
         <input type="text" class="form-control" id="settingOther" formControlName="settingOther" placeholder="Your answer">
       </div>
@@ -201,7 +201,7 @@
         </div>
       </div>
 
-      <div class="form-group" *ngIf="productForm.get('offerDigitalCopy').value === 'Yes'">
+      <div class="form-group" *ngIf="productForm.get('offerDigitalCopy')?.value === 'Yes'">
         <label>Digital Copy File Upload (pdf):</label>
         <input type="file" (change)="onFileSelect($event, 'digitalCopy')" accept=".pdf">
       </div>
@@ -247,12 +247,15 @@
       [isLoading]="isSubmitting"
       [success]="submitSuccess"
       [url]="previewUrl"
-      [customerEmail]="customerEmail" (back)="returnToForm()">
+      [customerEmail]="customerEmail"
+      [sku]="productForm.get('sku')?.value"
+      (back)="returnToForm()">
     </app-preview-page>
   </div>
 
   <div *ngIf="viewMode === 'purchase'">
     <app-purchase-product-page 
+      [sku]="productForm.get('sku')?.value" 
       (backToPreview)="viewMode = 'preview'">
     </app-purchase-product-page>
   </div>

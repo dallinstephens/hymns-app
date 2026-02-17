@@ -12,6 +12,7 @@ export class PreviewPageComponent implements OnInit {
   @Input() success: boolean = false;
   @Input() url: string = '';
   @Input() customerEmail: string = '';
+  @Input() sku: string = '';
 
   @Output() back = new EventEmitter<void>();
 
@@ -40,21 +41,22 @@ export class PreviewPageComponent implements OnInit {
   }
 
   onPublishClick() {
-    // Use the Variant ID from your admin link
     const variantId = '52656836149548'; 
-    
-    // Use the domain you identified
     const shopDomain = '7iyyfy-u5.myshopify.com';
+    
+    // Use 'this.sku' or whatever variable name you defined for the SKU in this component
+    const currentSku = this.sku || 'NOSKU'; 
+    
+    // Build the return URL with the SKU parameter included
+    const returnUrl = encodeURIComponent(`https://hymns.com/pages/self-publish?status=success&sku=${currentSku}`);
   
-    // Include the customer's email if we have it to pre-fill the checkout form
     const emailParam = this.customerEmail 
-      ? `?checkout[email]=${encodeURIComponent(this.customerEmail)}` 
+      ? `&checkout[email]=${encodeURIComponent(this.customerEmail)}` 
       : '';
   
-    // This link bypasses the cart and goes straight to the payment info screen
-    const checkoutUrl = `https://${shopDomain}/cart/${variantId}:1${emailParam}`;
+    const checkoutUrl = `https://${shopDomain}/cart/${variantId}:1?return_to=${returnUrl}${emailParam}`;
   
-    // Redirect the user to the Shopify Checkout
+    // Navigates the iframe to Shopify
     window.location.href = checkoutUrl;
   }
 }

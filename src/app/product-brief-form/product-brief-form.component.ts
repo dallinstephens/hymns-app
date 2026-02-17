@@ -147,6 +147,20 @@ export class ProductBriefFormComponent implements OnInit {
       publishDate: [''],
       rowNumber: ['']
     });
+
+    // This handles the view logic for BOTH initial load and "Finish" button clicks
+    this.route.queryParamMap.subscribe(params => {
+      const status = params.get('status');
+      const skuFromUrl = params.get('sku');
+
+      if (status === 'success') {
+        if (skuFromUrl) {
+          this.productForm.patchValue({ sku: skuFromUrl });
+        }
+        this.viewMode = 'purchase';
+        console.log('Switching to purchase mode');
+      }
+    });
   }
 
   get difficultyArray(): FormArray {

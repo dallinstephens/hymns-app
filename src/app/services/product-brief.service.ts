@@ -49,30 +49,57 @@ export interface ProductBriefForm {
   tags: string[];
   publishDate: string;
   rowNumber?: string;
-  previewUrl?: string; // Added to interface for consistency
+  previewUrl?: string; 
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class ProductBriefService {
-  private apiUrl = 'https://script.google.com/macros/s/AKfycbyyjuJIAm1o0LtQyqzDHR7TjKFJyew036gaW6Cbgwq4AI9HJwR4N5yyZxE-X28jLT4jtw/exec';
+  // Your Google Apps Script URL
+  private apiUrl = 'https://script.google.com/macros/s/AKfycbwHuOvQq4GBsEVaZVP0DlR67FyBBGI-mr38ZkkrfrJeEOo56rJDC6fwcthQTh7O9zT65Q/exec';
 
   constructor(private http: HttpClient) {}
 
+  /**
+   * Initial form submission to Google Sheets
+   */
   submitForm(formData: ProductBriefForm): Observable<any> {
     const headers = new HttpHeaders({
       'Content-Type': 'text/plain' 
     });
   
-    // We keep responseType: 'text' because Google Apps Script 
-    // redirects cause JSON parsing errors in Angular otherwise.
     return this.http.post(this.apiUrl, JSON.stringify(formData), { 
       headers,
       responseType: 'text' 
     });
   }
 
+  /**
+   * Final step: Activated after Shopify payment is confirmed.
+   * Tells the backend to make the targetSku 'active' in Shopify.
+   */
+  finalizePublication(targetSku: string): Observable<any> {
+    const payload = {
+      action: 'finalize',
+      sku: targetSku, 
+      status: 'active'
+    };
+
+    // We use text/plain and responseType: 'text' to handle Google Script's redirect behavior
+    const headers = new HttpHeaders({
+      'Content-Type': 'text/plain'
+    });
+
+    return this.http.post(this.apiUrl, JSON.stringify(payload), { 
+      headers,
+      responseType: 'text' 
+    });
+  }
+
+  /**
+   * Helper to convert file uploads to Base64 strings for the Google Sheet
+   */
   fileToBase64(file: File, maxWidth: number = 1200): Promise<string> {
     return new Promise((resolve, reject) => {
       if (!file.type.startsWith('image/')) {

@@ -1,54 +1,18 @@
-<div class="pin-to-viewport">
-    <div class="outer-frame">
-      <div class="results-wrapper text-center">
-        
-        <div class="icon">💳</div>
-        
-        <h2>Publish Your Product</h2>
-        
-        <p class="lead">
-          To go live, please redeem a code <br> or purchase one below.
-        </p>
-  
-        <div class="content-centering-area">
-          
-          <div class="purchase-action-wrapper">
-            <a href="https://7iyyfy-u5.myshopify.com/products/self-publish-product-page" 
-               target="_blank" 
-               class="btn btn-primary btn-lg w-100 mb-4">
-               💰 Purchase Redemption Code
-            </a>
-          </div>
-  
-          <div class="separator">
-            <span>OR</span>
-          </div>
-  
-          <div class="redemption-block">
-            <label for="redeemCode" class="form-label">Enter Product Page Redemption Code</label>
-            
-            <div class="redemption-form-stack">
-              <input type="text" 
-                     id="redeemCode" 
-                     class="form-control form-control-lg" 
-                     placeholder="XXXX-XXXX-XXXX">
-              
-              <button class="btn btn-success btn-lg px-5" type="button">
-                Redeem
-              </button>
-              
-              <small class="subtext">Codes are sent to your email after purchase.</small>
-            </div>
-          </div>
-          
-        </div>
-  
-        <div class="actions">
-          <button class="btn btn-link" (click)="onBackClick()">
-            ← Back to Preview
-          </button>
-        </div>
-  
-      </div>
+<div class="purchase-success-container text-center">
+    <div class="check-icon">⭐</div>
+    <h1>Thank You for Your Purchase!</h1>
+    <p class="lead">Your payment for <strong>SELF_PUBLISH_PRODUCT_PAGEd</strong> is confirmed.</p>
+    
+    <div class="final-action-box" style="margin-top: 30px; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+      <h3>Ready to go live?</h3>
+      <p>Click the button below to finalize the process and publish your song to the catalog.</p>
+      
+      <button 
+        class="btn btn-success btn-lg" 
+        (click)="onFinalPublish()" 
+        [disabled]="isFinalizing">
+        <span *ngIf="!isFinalizing">🚀 Publish My Song</span>
+        <span *ngIf="isFinalizing">⚙️ Finalizing in Shopify...</span>
+      </button>
     </div>
-  </div>
+</div>
