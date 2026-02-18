@@ -48,7 +48,7 @@ export interface ProductBriefForm {
   thumbnail10?: string;
   tags: string[];
   publishDate: string;
-  rowNumber?: string;
+  email?: string;
   previewUrl?: string; 
 }
 
@@ -57,7 +57,7 @@ export interface ProductBriefForm {
 })
 export class ProductBriefService {
   // Your Google Apps Script URL
-  private apiUrl = 'https://script.google.com/macros/s/AKfycbwHuOvQq4GBsEVaZVP0DlR67FyBBGI-mr38ZkkrfrJeEOo56rJDC6fwcthQTh7O9zT65Q/exec';
+  private apiUrl = 'https://script.google.com/macros/s/AKfycbwnrDZ0cZgtrhaGQDSR7Jzt9DPaghTS9D2TCfKj1mn7V0mlTUK-GEJ2Li1bfCK6G7IGYA/exec';
 
   constructor(private http: HttpClient) {}
 
@@ -78,11 +78,13 @@ export class ProductBriefService {
   /**
    * Final step: Activated after Shopify payment is confirmed.
    * Tells the backend to make the targetSku 'active' in Shopify.
+   * Pass the email here to ensure the correct spreadsheet row is updated.
    */
-  finalizePublication(targetSku: string): Observable<any> {
+   finalizePublication(targetSku: string, email: string): Observable<any> {
     const payload = {
       action: 'finalize',
       sku: targetSku, 
+      email: email, // This is the "Identity Lock" for your Google Script
       status: 'active'
     };
 

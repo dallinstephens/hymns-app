@@ -1,22 +1,30 @@
 <div class="pin-to-viewport">
     <div class="outer-frame">
       <div class="results-wrapper text-center">
-    
-        <div *ngIf="isLoading" class="loading-state">
+  
+        <div *ngIf="isLoading && !isFinalizing" class="loading-state">
           <div class="spinner"></div>
           <h2>🚀 Creating Product Page...</h2>
           <p class="lead">Please wait. This may take up to a few minutes.</p>
-          
           <div class="progress-bar-container">
             <div class="progress-bar-value"></div>
           </div>
         </div>
-      
-        <div *ngIf="!isLoading && success" class="success-state">
+  
+        <div *ngIf="isFinalizing" class="loading-state">
+          <div class="spinner"></div>
+          <h2>⚙️ Finalizing Product...</h2>
+          <p class="lead">Please wait while we sync with Shopify.</p>
+          <div class="progress-bar-container">
+            <div class="progress-bar-value"></div>
+          </div>
+        </div>
+  
+        <div *ngIf="!isLoading && !isFinalizing && success" class="success-state">
           <div class="icon success">✅</div>
           <h2 class="text-success">Submission Successful!</h2>
           <p class="lead">Your product draft is ready for review.</p>
-          
+  
           <div class="actions">
             <a [href]="url" target="_blank" class="btn btn-primary btn-lg">
               👁️ View Product Page
@@ -24,13 +32,16 @@
             <button class="btn btn-default btn-lg" (click)="onBackClick()">
               📝 Edit Product Page
             </button>
-            <button class="btn btn-success btn-lg" (click)="onPublishClick()">
+            
+            <button 
+              class="btn btn-success btn-lg" 
+              (click)="onPublishClick()">
               🚀 Publish Product Page
             </button>
           </div>
         </div>
-      
-        <div *ngIf="!isLoading && error" class="error-state">
+  
+        <div *ngIf="!isLoading && !isFinalizing && error" class="error-state">
           <div class="icon error">❌</div>
           <h2 class="text-danger">Submission Failed</h2>
           <p class="alert alert-danger">{{ error }}</p>
@@ -40,7 +51,7 @@
             </button>
           </div>
         </div>
-    
-      </div>
+  
+      </div> 
     </div>
   </div>

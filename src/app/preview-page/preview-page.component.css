@@ -137,3 +137,19 @@
     margin-top: 20px;
     text-align: left;
   }
+
+  .publish-button:disabled {
+    background-color: #888; /* Slightly darker to show it's locked */
+    cursor: wait; /* Changes the mouse icon to a loader */
+  }
+  
+  .fa-spin {
+    animation: spin 1s linear infinite;
+    display: inline-block;
+    margin-right: 8px;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
