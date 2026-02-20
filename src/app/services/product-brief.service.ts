@@ -57,7 +57,7 @@ export interface ProductBriefForm {
 })
 export class ProductBriefService {
   // Your Google Apps Script URL
-  private apiUrl = 'https://script.google.com/macros/s/AKfycbwnrDZ0cZgtrhaGQDSR7Jzt9DPaghTS9D2TCfKj1mn7V0mlTUK-GEJ2Li1bfCK6G7IGYA/exec';
+  private apiUrl = 'https://script.google.com/macros/s/AKfycbyagbPITGYKq-i1ejUWe73h6jxNPp9MAoNbfjm2jDuWmpmYMEON9cnyre7tn4eUP4_r-A/exec';
 
   constructor(private http: HttpClient) {}
 
