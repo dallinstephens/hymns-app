@@ -1,0 +1,118 @@
+<div class="dashboard-container" [class.blurred]="isLoading">
+  
+  <div *ngIf="isLoading" class="spinner-overlay">
+    <div class="spinner-card">
+      <div class="spinner"></div>
+      <h2>{{ uploadProgress > 0 ? '🚀 Creating Product Page...' : '💎 Finalizing Purchase...' }}</h2>
+      <p>Please wait while we sync your music with the store.</p>
+      
+      <div class="progress-bar-container" *ngIf="uploadProgress > 0">
+        <div class="progress-bar-value" [style.width.%]="uploadProgress"></div>
+      </div>
+      <p *ngIf="uploadProgress > 0" style="font-size: 12px; color: #666; margin-top: 8px;">{{ uploadProgress }}% Complete</p>
+    </div>
+  </div>
+
+  <div class="dashboard-header">
+    <div class="header-text">
+      <h1>Self-Publishing Dashboard</h1>
+      <p class="subtitle">Managing products for: <strong>{{ customerEmail }}</strong></p>
+    </div>
+
+    <div class="header-actions" style="display: flex; gap: 10px;">
+      <button class="btn btn-refresh" 
+              (click)="onManualRefresh()" 
+              [disabled]="isLoadingData || isLoading"
+              [class.spinning]="isLoadingData">
+        {{ isLoadingData ? '🔄 Syncing...' : '🔄 Refresh' }}
+      </button>
+
+      <button class="btn btn-create" (click)="onCreateNew()" [disabled]="isLoading">
+        ➕ Create New Product Page
+      </button>
+    </div>
+  </div>
+
+  <div class="dashboard-content">
+    <div *ngIf="isLoadingData && !isLoading" class="loading-state" style="text-align: center; padding: 40px;">
+      <div class="spinner" style="margin: 0 auto;"></div>
+      <p>Fetching your hymns...</p>
+    </div>
+
+    <table class="product-table" *ngIf="!isLoadingData && products.length > 0; else noProducts">
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Status</th>
+          <th class="text-center">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let product of products" [class.row-live]="product.sku?.startsWith('H')">
+          <td class="product-info">
+            <div class="product-preview">
+              <img [src]="product.coverImageUrl || product.coverImage || 'assets/placeholder-cover.png'" 
+                   alt="Cover Image" 
+                   class="cover-thumb"
+                   onerror="this.src='assets/placeholder-cover.png'">
+              <div class="product-meta">
+                <span class="product-title">{{ product.title || 'Untitled Product' }}</span>
+                <span class="product-sku" [class.text-success]="product.sku?.startsWith('H')">
+                  SKU: {{ product.sku }}
+                </span>
+              </div>
+            </div>
+          </td>
+          
+          <td class="product-status">
+            <span [class.status-live]="product.sku?.startsWith('H')" 
+                  [class.status-pending]="!product.sku?.startsWith('H')">
+              {{ product.sku?.startsWith('H') ? '● Live' : '○ Pending' }}
+            </span>
+          </td>
+
+          <td class="product-actions">
+            <div class="button-group">
+              <a [href]="product.previewUrl || 'https://hymns.com/products/' + product.sku" 
+                 target="_blank" 
+                 class="btn btn-view" 
+                 title="View on Store">
+                👁️ View
+              </a>
+              
+              <button class="btn btn-edit" 
+                      [disabled]="isLoading" 
+                      (click)="onEdit(product.sku)" 
+                      title="Edit Details">
+                📝 Edit
+              </button>
+              
+              <button class="btn btn-delete" 
+                      [disabled]="isLoading" 
+                      (click)="onDelete(product)" 
+                      title="Remove Everywhere">
+                🗑️ Delete
+              </button>
+              
+              <button class="btn btn-publish" 
+                      [disabled]="isLoading || product.sku?.startsWith('H')" 
+                      (click)="onPublish(product)" 
+                      [class.btn-success]="product.sku?.startsWith('H')"
+                      [title]="product.sku?.startsWith('H') ? 'Already Live' : 'Ready to Sell'">
+                {{ product.sku?.startsWith('H') ? '✅ Published' : '🚀 Publish' }}
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <ng-template #noProducts>
+      <div class="empty-state" *ngIf="!isLoadingData" style="text-align: center; padding: 60px;">
+        <div class="empty-icon" style="font-size: 48px;">🎵</div>
+        <p>No product pages found for <strong>{{ customerEmail }}</strong>.</p>
+        <p>Ready to share your music? Click "Create New" to get started.</p>
+      </div>
+    </ng-template>
+  </div>
+</div>

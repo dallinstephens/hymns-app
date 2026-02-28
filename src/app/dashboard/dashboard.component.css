@@ -1,0 +1,220 @@
+/* --- SPINNER & OVERLAY (ALIGNED WITH HTML) --- */
+.spinner-overlay {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  background-color: rgba(255, 255, 255, 0.9) !important; /* Slight transparency to see the blur */
+  display: flex !important;
+  justify-content: center !important;
+  align-items: flex-start !important; 
+  padding-top: 100px !important; 
+  z-index: 99999 !important;
+}
+
+.spinner-card {
+  position: sticky !important;
+  top: 100px !important;
+  background: white;
+  padding: 40px;
+  border-radius: 20px;
+  box-shadow: 0 25px 70px rgba(0,0,0,0.2);
+  min-width: 400px;
+  z-index: 100000;
+  text-align: center;
+  border: 1px solid #eee;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 5px solid #f3f3f3;
+  border-top: 5px solid #007bff; 
+  border-radius: 50%;
+  margin: 0 auto 20px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* --- PROGRESS BAR --- */
+.progress-bar-container {
+  width: 100%;
+  background-color: #f0f0f0;
+  border-radius: 10px;
+  margin: 20px 0;
+  height: 12px;
+  overflow: hidden;
+}
+
+.progress-bar-value {
+  height: 100%;
+  background: linear-gradient(90deg, #007bff, #00c6ff);
+  transition: width 0.5s ease-in-out; 
+  border-radius: 10px;
+  width: 0%; 
+}
+
+/* --- DASHBOARD LAYOUT --- */
+.dashboard-container {
+  position: relative !important; 
+  min-height: 500px;  
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+.dashboard-container.blurred .dashboard-content,
+.dashboard-container.blurred .dashboard-header {
+  filter: blur(8px); /* Increased blur for better focus on the spinner card */
+  pointer-events: none;
+  user-select: none;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  border-bottom: 2px solid #f0f0f0;
+  padding-bottom: 20px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.header-text h1 { margin: 0; color: #333; font-size: 26px; font-weight: 700; }
+.subtitle { color: #666; margin-top: 5px; }
+
+/* --- TABLE & PRODUCTS --- */
+.product-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.product-table th {
+  background-color: #fcfcfc;
+  padding: 15px;
+  text-align: left;
+  text-transform: uppercase;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #888;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.product-table td {
+  padding: 15px;
+  border-bottom: 1px solid #f1f1f1;
+  vertical-align: middle;
+}
+
+.row-live {
+  background-color: #f8fffb; /* Very subtle green for published rows */
+}
+
+/* Product Meta Info */
+.product-preview { display: flex; align-items: center; gap: 15px; }
+.product-meta { display: flex; flex-direction: column; }
+.product-title { font-weight: 600; color: #333; font-size: 15px; }
+.product-sku { font-size: 11px; color: #999; font-family: monospace; }
+.product-sku.text-success { color: #28a745 !important; font-weight: bold; }
+
+/* --- STATUS BADGES --- */
+.status-live {
+  color: #28a745;
+  font-weight: 800;
+  background: #e6f4ea;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.status-pending {
+  color: #f39c12;
+  font-weight: 800;
+  background: #fff4e5;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.cover-thumb {
+  width: 55px;
+  height: 75px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid #eee;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* --- BUTTONS --- */
+.button-group {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.btn {
+  padding: 9px 15px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 12px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(95%);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.btn:disabled {
+  background-color: #e0e0e0 !important;
+  color: #a0a0a0 !important;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-create { background-color: #007bff; color: white; }
+
+.btn-refresh {
+  background-color: #f8f9fa;
+  color: #333;
+  border: 1px solid #ddd;
+}
+
+/* Make the icon inside the refresh button spin when active */
+.btn-refresh.spinning i, 
+.btn-refresh.spinning span {
+  animation: spin 1.5s linear infinite;
+  display: inline-block;
+}
+
+.btn-publish { background-color: #28a745; color: white; }
+.btn-success { background-color: #f1f1f1 !important; color: #28a745 !important; cursor: default; }
+
+.btn-edit { background-color: #fd7e14; color: white; }
+.btn-delete { background-color: #dc3545; color: white; }
+.btn-view { background-color: #6c757d; color: white; text-decoration: none; }

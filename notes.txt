@@ -1,0 +1,54 @@
+# login to firebase
+firebase login --reauth
+
+# update
+ng build --configuration production && firebase deploy
+rm -rf .angular dist && ng build --configuration production && firebase deploy
+
+# FIREBASE_DATABASE_URL
+https://hymns-app-135767-default-rtdb.firebaseio.com/
+
+# FIREBASE_SECRET
+gm48ZCY4zhMzAuq3iy9zjt0RzFse9ZT5jv11AG5J
+
+# Pre-filled form for testing
+    this.productForm = this.fb.group({
+      sku: ['', Validators.required],
+      title: ['My Title', Validators.required],
+      setting: ['Piano', Validators.required],
+      settingOther: [''],
+      artistName: ['Dallin', Validators.required],
+      coverImage: [null],
+      audioFile: [null],
+      youtubeLink: ['https://www.youtube.com/watch?v=BRLIM9snZEg'],
+      originalComposer: ['Original Composer'],
+      sourceTitle: ['Source Title'],
+      churchOwned: ['Yes', Validators.required],
+      primaryUse: ['Church Choir', Validators.required],
+      paper1Calculation: ['First Chair Pre-printed Cover - 11 X 17'],
+      paper1SheetCount: ['1'],
+      paper2Calculation: ['Choral - 11 X 17'],
+      paper2SheetCount: ['2'],
+      inkBlackWhite: ['3'],
+      inkColor: ['4'],
+      includeSaddleStitch: ['Yes'],
+      descriptionParagraph1: ['p1'],
+      descriptionParagraph2: ['p2'],
+      titlesIncluded: ['A Poor Wayfaring Man of Grief; Each Life That Touches Ours for Good; I\'m Trying to Be like Jesus'],
+      composers: ['Comp Dallin'],
+      arrangers: ['Arr Dallin'],
+      lyricists: ['Lyr Dallin'],
+      difficulty: this.fb.array([]),
+      performanceTime: ['3:50'],
+      scriptureReferences: ['John 3:16'],
+      weight: ['5'],
+      offerCoilBinding: ['Yes'],
+      offerDigitalCopy: ['Yes'],
+      digitalCopy: [null],
+      soundcloudLink: ['https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/playlists/912654358&amp;color=%23ff5500&amp;auto_play=false&amp;hide_related=false&amp;show_comments=false&amp;show_user=false&amp;show_reposts=false&amp;show_teaser=false'],
+      thumbnail1: [null], thumbnail2: [null], thumbnail3: [null], thumbnail4: [null], thumbnail5: [null],
+      thumbnail6: [null], thumbnail7: [null], thumbnail8: [null], thumbnail9: [null], thumbnail10: [null],
+      tags: this.fb.array([]),
+      publishDate: [''],
+      email: [this.customerEmail, [Validators.required, Validators.email]],
+    });

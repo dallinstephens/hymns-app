@@ -1,4 +1,17 @@
-<app-product-brief-form 
-  [email]="customerEmail" 
-  [urlFromParent]="url">
-</app-product-brief-form>
+<div class="app-container">
+  <app-dashboard 
+    *ngIf="viewMode === 'dashboard'"
+    [customerEmail]="customerEmail"
+    [isLoading]="isLoading"
+    (viewChange)="handleViewChange($event)">
+  </app-dashboard>
+
+  <!-- Keep form alive during transition using keepFormAlive OR viewMode === 'form' -->
+  <app-form 
+    *ngIf="viewMode === 'form' || keepFormAlive"
+    [ngStyle]="{'display': viewMode === 'form' ? 'block' : 'none'}"
+    [email]="customerEmail"
+    [editSku]="activeSku"
+    (viewChange)="handleViewChange($event)">
+  </app-form>
+</div>

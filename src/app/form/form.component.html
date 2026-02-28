@@ -1,0 +1,353 @@
+<div class="container">
+  <div class="page-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
+    <div>
+      <h1 *ngIf="!isEditMode">Product Page Generator</h1>
+      <h1 *ngIf="isEditMode">Edit Product: <small>{{ productForm.get('sku')?.value }}</small></h1>
+    </div>
+    <button type="button" class="btn btn-default" (click)="onCancel()" style="border-radius: 20px; padding: 8px 20px;">
+      ← Back to Dashboard
+    </button>
+  </div>
+
+  <div *ngIf="submitError" class="alert alert-danger">
+    <strong>Error!</strong> {{submitError}}
+  </div>
+
+  <form [formGroup]="productForm" (ngSubmit)="onSubmit()">
+    
+    <div class="form-group">
+      <label for="sku">SKU <span class="text-danger">*</span></label>
+      <input 
+        type="text" 
+        class="form-control" 
+        id="sku" 
+        formControlName="sku" 
+        [readonly]="isEditMode"
+        [style.background-color]="isEditMode ? '#f8f9fa' : 'white'"
+        placeholder="Will be assigned automatically if 'temporary'">
+      <p class="help-block" *ngIf="!isEditMode">Leave as 'temporary' to generate a new T-SKU.</p>
+    </div>
+
+    <div class="form-group">
+      <label for="title">Title <span class="text-danger">*</span></label>
+      <input type="text" class="form-control" id="title" formControlName="title" placeholder="Your answer">
+    </div>
+
+    <div class="row">
+      <div class="col-sm-6">
+        <div class="form-group">
+          <label for="setting">Setting</label>
+          <select class="form-control" id="setting" formControlName="setting">
+            <option value="">Choose</option>
+            <option *ngFor="let option of settingOptions" [value]="option">{{option}}</option>
+          </select>
+        </div>
+      </div>
+      <div class="col-sm-6">
+        <div class="form-group">
+          <label for="artistName">Artist Name</label>
+          <input type="text" class="form-control" id="artistName" formControlName="artistName" placeholder="Your answer">
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group" *ngIf="productForm.get('setting')?.value === 'Other (please specify)'">
+      <label for="settingOther">Please specify other setting:</label>
+      <input type="text" class="form-control" id="settingOther" formControlName="settingOther" placeholder="Your answer">
+    </div>
+
+    <hr>
+
+    <div class="row">
+      <div class="col-sm-6">
+        <div class="form-group">
+          <label>Upload Cover Image</label>
+          <p class="help-block">Max 100 MB.</p>
+          <div *ngIf="isEditMode && productForm.get('coverImageUrl')?.value" class="alert alert-info" style="padding: 5px 10px; margin-bottom: 5px; font-size: 13px;">
+            <i class="glyphicon glyphicon-picture"></i> <a [href]="productForm.get('coverImageUrl')?.value" target="_blank">View Current Cover</a>
+          </div>
+          <input type="file" (change)="onFileSelect($event, 'coverImage')" accept="image/*">
+          <div class="file-status-label" *ngIf="fileStatus['coverImage']" style="color: #2e7d32; font-weight: bold;">{{ fileStatus['coverImage'] }}</div>
+        </div>
+      </div>
+      <div class="col-sm-6">
+        <div class="form-group">
+          <label>Upload Audio File</label>
+          <p class="help-block">Max 1 GB.</p>
+          <div *ngIf="isEditMode && productForm.get('audioFileUrl')?.value" class="alert alert-info" style="padding: 5px 10px; margin-bottom: 5px; font-size: 13px;">
+            <i class="glyphicon glyphicon-music"></i> <a [href]="productForm.get('audioFileUrl')?.value" target="_blank">Listen to Audio</a>
+          </div>
+          <input type="file" (change)="onFileSelect($event, 'audioFile')" accept="audio/*">
+          <div class="file-status-label" *ngIf="fileStatus['audioFile']" style="color: #2e7d32; font-weight: bold;">{{ fileStatus['audioFile'] }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="youtubeLink">Enter YouTube Link</label>
+      <input type="text" class="form-control" id="youtubeLink" formControlName="youtubeLink" placeholder="Your answer">
+    </div>
+
+    <div class="form-group">
+      <label for="soundcloudLink">Soundcloud Link (optional)</label>
+      <input type="text" class="form-control" id="soundcloudLink" formControlName="soundcloudLink">
+    </div>
+
+    <hr>
+
+    <div class="row">
+      <div class="col-sm-6">
+        <div class="form-group">
+          <label for="originalComposer">Original Composer</label>
+          <input type="text" class="form-control" id="originalComposer" formControlName="originalComposer" placeholder="Your answer">
+        </div>
+      </div>
+      <div class="col-sm-6">
+        <div class="form-group">
+          <label for="sourceTitle">Source Title</label>
+          <input type="text" class="form-control" id="sourceTitle" formControlName="sourceTitle" placeholder="Your answer">
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Is any portion of this product published by or owned by the Church (IRI)? <span class="text-danger">*</span></label>
+      <div class="radio">
+        <label><input type="radio" formControlName="churchOwned" value="Yes"> Yes</label>
+      </div>
+      <div class="radio">
+        <label><input type="radio" formControlName="churchOwned" value="No"> No</label>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Primary Intended Use (select one)</label>
+      <div class="radio" *ngFor="let option of primaryUseOptions">
+        <label><input type="radio" formControlName="primaryUse" [value]="option"> {{option}}</label>
+      </div>
+    </div>
+
+    <hr>
+
+    <div class="well">
+      <div class="row">
+        <div class="col-sm-6">
+          <div class="form-group">
+            <label>Paper 1: For Price Calculation</label>
+            <select class="form-control" formControlName="paper1Calculation">
+              <option value="">Choose</option>
+              <option *ngFor="let option of paper1Options" [value]="option">{{option}}</option>
+            </select>
+          </div>
+        </div>
+        <div class="col-sm-6">
+          <div class="form-group">
+            <label for="paper1SheetCount">Paper 1 Sheet Count</label>
+            <input type="text" class="form-control" id="paper1SheetCount" formControlName="paper1SheetCount" placeholder="0">
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-sm-6">
+          <div class="form-group">
+            <label>Paper 2: For Price Calculation</label>
+            <select class="form-control" formControlName="paper2Calculation">
+              <option value="">Choose</option>
+              <option *ngFor="let option of paper2Options" [value]="option">{{option}}</option>
+            </select>
+          </div>
+        </div>
+        <div class="col-sm-6">
+          <div class="form-group">
+            <label for="paper2SheetCount">Paper 2 Sheet Count</label>
+            <input type="text" class="form-control" id="paper2SheetCount" formControlName="paper2SheetCount" placeholder="0">
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-sm-6">
+          <div class="form-group">
+            <label for="inkBlackWhite">Ink (Black and White/Page)</label>
+            <input type="text" class="form-control" id="inkBlackWhite" formControlName="inkBlackWhite" placeholder="0">
+          </div>
+        </div>
+        <div class="col-sm-6">
+          <div class="form-group">
+            <label for="inkColor">Ink (Color/Page)</label>
+            <input type="text" class="form-control" id="inkColor" formControlName="inkColor" placeholder="0">
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Include Saddle Stitch (2 Staples)</label>
+        <div class="radio-inline">
+          <label><input type="radio" formControlName="includeSaddleStitch" value="Yes"> Yes</label>
+        </div>
+        <div class="radio-inline">
+          <label><input type="radio" formControlName="includeSaddleStitch" value="No"> No</label>
+        </div>
+      </div>
+    </div>
+
+    <hr>
+
+    <div class="form-group">
+      <label for="descriptionParagraph1">Description Paragraph 1</label>
+      <textarea class="form-control" id="descriptionParagraph1" formControlName="descriptionParagraph1" rows="3" placeholder="Description appearing at top..."></textarea>
+    </div>
+
+    <div class="form-group">
+      <label for="descriptionParagraph2">Description Paragraph 2</label>
+      <textarea class="form-control" id="descriptionParagraph2" formControlName="descriptionParagraph2" rows="3" placeholder="Secondary details..."></textarea>
+    </div>
+
+    <div class="form-group">
+      <label for="titlesIncluded">Titles included (semicolon separated):</label>
+      <textarea class="form-control" id="titlesIncluded" formControlName="titlesIncluded" rows="2"></textarea>
+    </div>
+
+    <div class="row">
+      <div class="col-sm-4">
+        <div class="form-group">
+          <label for="composers">Composer(s)</label>
+          <input type="text" class="form-control" id="composers" formControlName="composers">
+        </div>
+      </div>
+      <div class="col-sm-4">
+        <div class="form-group">
+          <label for="arrangers">Arranger(s)</label>
+          <input type="text" class="form-control" id="arrangers" formControlName="arrangers">
+        </div>
+      </div>
+      <div class="col-sm-4">
+        <div class="form-group">
+          <label for="lyricists">Lyricist(s)</label>
+          <input type="text" class="form-control" id="lyricists" formControlName="lyricists">
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-sm-6">
+        <div class="form-group">
+          <label>Difficulty:</label>
+          <div class="checkbox" *ngFor="let option of difficultyOptions">
+            <label>
+              <input type="checkbox" [checked]="difficultyArray.value.includes(option)" (change)="onDifficultyChange(option, $event)"> {{option}}
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6">
+        <div class="form-group">
+          <label for="performanceTime">Performance time (e.g. 3:30):</label>
+          <input type="text" class="form-control" id="performanceTime" formControlName="performanceTime">
+        </div>
+        <div class="form-group">
+          <label for="scriptureReferences">Scripture Reference(s):</label>
+          <input type="text" class="form-control" id="scriptureReferences" formControlName="scriptureReferences">
+        </div>
+        <div class="form-group">
+          <label for="weight">Weight (in ounces):</label>
+          <input type="text" class="form-control" id="weight" formControlName="weight" placeholder="e.g. 1.2">
+        </div>
+      </div>
+    </div>
+
+    <hr>
+
+    <div class="row">
+      <div class="col-sm-6">
+        <div class="form-group">
+          <label>Offer Coil Binding <span class="text-danger">*</span></label>
+          <div class="radio">
+            <label><input type="radio" formControlName="offerCoilBinding" value="Yes"> Yes</label>
+          </div>
+          <div class="radio">
+            <label><input type="radio" formControlName="offerCoilBinding" value="No"> No</label>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6">
+        <div class="form-group">
+          <label>Offer Digital Copy <span class="text-danger">*</span></label>
+          <div class="radio">
+            <label><input type="radio" formControlName="offerDigitalCopy" value="Yes"> Yes</label>
+          </div>
+          <div class="radio">
+            <label><input type="radio" formControlName="offerDigitalCopy" value="No"> No</label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group" *ngIf="productForm.get('offerDigitalCopy')?.value === 'Yes'">
+      <label>Digital Copy File Upload (pdf):</label>
+      <div *ngIf="isEditMode && productForm.get('digitalCopyUrl')?.value" class="alert alert-info" style="padding: 5px 10px; margin-bottom: 5px; font-size: 13px;">
+        <i class="glyphicon glyphicon-file"></i> <a [href]="productForm.get('digitalCopyUrl')?.value" target="_blank">View Current PDF</a>
+      </div>
+      <input type="file" (change)="onFileSelect($event, 'digitalCopy')" accept=".pdf">
+      <div class="file-status-label" *ngIf="fileStatus['digitalCopy']" style="color: #2e7d32; font-weight: bold;">{{ fileStatus['digitalCopy'] }}</div>
+    </div>
+
+    <hr>
+
+    <h4>Product Thumbnails (optional)</h4>
+    <div class="row">
+      <div class="col-sm-6" *ngFor="let num of [1,2,3,4,5,6,7,8,9,10]; let i = index">
+        <div class="form-group">
+          <label>Thumbnail {{num}}</label>
+          <div *ngIf="isEditMode && productForm.get('thumbnailUrls')?.value?.[i]" style="margin-bottom: 5px;">
+             <a [href]="productForm.get('thumbnailUrls')?.value?.[i]" target="_blank" style="font-size: 11px;">
+               <i class="glyphicon glyphicon-picture"></i> View Current Thumb {{num}}
+             </a>
+          </div>
+          <input type="file" (change)="onFileSelect($event, 'thumbnail' + num)" accept="image/*">
+          <div class="file-status-label" *ngIf="fileStatus['thumbnail' + num]" style="color: #2e7d32; font-size: 12px;">{{ fileStatus['thumbnail' + num] }}</div>
+        </div>
+      </div>
+    </div>
+
+    <hr>
+
+    <div class="form-group">
+      <label>Category Tags:</label>
+      <div style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 4px; background: #fff;">
+        <div class="checkbox" *ngFor="let option of tagOptions">
+          <label>
+            <input type="checkbox" [checked]="tagsArray.value.includes(option)" (change)="onTagChange(option, $event)"> {{option}}
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="publishDate">Publish Date</label>
+      <input type="date" class="form-control" id="publishDate" formControlName="publishDate">
+    </div>
+
+    <div class="form-group">
+      <label for="email">Composer Identity (Email):</label>
+      <input 
+        type="email" 
+        class="form-control" 
+        id="email" 
+        [value]="customerEmail" 
+        readonly
+        style="background-color: #f8f9fa; cursor: not-allowed;">
+    </div>
+
+    <div class="form-group" style="margin-top: 30px; padding-bottom: 50px; display: flex; gap: 15px;">
+      <button type="submit" class="btn btn-primary btn-lg" [disabled]="isSubmitting">
+        <span *ngIf="isSubmitting">⌛ Submitting...</span>
+        <span *ngIf="!isSubmitting">{{ isEditMode ? 'Save Changes' : 'Submit Draft' }}</span>
+      </button>
+      <button type="button" class="btn btn-default btn-lg" (click)="onCancel()">
+        Cancel
+      </button>
+    </div>
+  </form>
+</div>

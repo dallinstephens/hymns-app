@@ -1,0 +1,12 @@
+body {
+    margin: 0;
+    padding: 0;
+}
+  
+body.spinner-active {
+    overflow: hidden !important;
+    position: fixed !important;
+    width: 100% !important;
+    height: 100vh !important;
+    top: 0 !important;
+}
