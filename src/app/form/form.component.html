@@ -343,7 +343,7 @@
     <div class="form-group" style="margin-top: 30px; padding-bottom: 50px; display: flex; gap: 15px;">
       <button type="submit" class="btn btn-primary btn-lg" [disabled]="isSubmitting">
         <span *ngIf="isSubmitting">⌛ Submitting...</span>
-        <span *ngIf="!isSubmitting">{{ isEditMode ? 'Save Changes' : 'Submit Draft' }}</span>
+        <span *ngIf="!isSubmitting">{{ isEditMode ? 'Save Changes' : 'Create Product' }}</span>
       </button>
       <button type="button" class="btn btn-default btn-lg" (click)="onCancel()">
         Cancel

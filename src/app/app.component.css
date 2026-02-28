@@ -1,8 +1,16 @@
+/* Ensure the container is the reference point for the white overlays */
+.app-container {
+    position: relative;
+    width: 100%;
+    min-height: 100vh;
+}
+
 body {
     margin: 0;
     padding: 0;
 }
-  
+
+/* Prevents scrolling when the 🎼 or 🚀 overlays are visible */
 body.spinner-active {
     overflow: hidden !important;
     position: fixed !important;

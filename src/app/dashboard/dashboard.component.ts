@@ -22,9 +22,10 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
 
   products: any[] = [];
   isLoadingData = true;
+  isPublishing = false; // NEW: Controls the "Creating Product Page" overlay
+  isDeleting = false;   // NEW: Ensures overlay doesn't show during deletion
   uploadProgress: number = 0;
   
-  // Polling properties to handle the T -> H transition automatically
   private pollingSub?: Subscription;
   private isPolling = false;
 
@@ -38,7 +39,6 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
       const wasLoading = changes['isLoading'].previousValue;
       const isNowLoading = changes['isLoading'].currentValue;
       
-      // If parent finishes graduation, reload data
       if (isNowLoading === false && wasLoading === true) {
         this.uploadProgress = 0; 
         if (this.customerEmail) await this.loadUserProducts();
@@ -49,7 +49,6 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
   async ngOnInit() {
     if (this.customerEmail) {
       await this.loadUserProducts();
-      // Check if we just returned from Shopify and need to watch for the H-SKU
       this.checkAndStartPolling();
     } else {
       this.isLoadingData = false;
@@ -60,10 +59,6 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
     this.stopPolling();
   }
 
-  /**
-   * AUTOMATED GRADUATION WATCHER
-   * If a user returns from checkout, this polls Firebase until the SKU swaps.
-   */
   private checkAndStartPolling() {
     const pendingSku = localStorage.getItem('pending_sku');
     if (pendingSku && pendingSku.startsWith('T') && !this.isLoading) {
@@ -77,14 +72,15 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
     let attempts = 0;
 
     this.pollingSub = interval(4000)
-      .pipe(takeWhile(() => this.isPolling && attempts < 20))
+      .pipe(takeWhile(() => this.isPolling && attempts < 25))
       .subscribe(async () => {
         attempts++;
         const data = await this.productService.getProductsByEmail(this.customerEmail);
-        const hasHSku = data.some((p: any) => p.sku?.startsWith('H'));
+        
+        const activeHSku = data.find((p: any) => p.sku?.startsWith('H') && p.status === 'active');
         const tSkuGone = !data.some((p: any) => p.sku === oldSku);
 
-        if (hasHSku || tSkuGone) {
+        if (activeHSku || (tSkuGone && data.some((p: any) => p.sku?.startsWith('H')))) {
           localStorage.removeItem('pending_sku');
           this.products = [...data].reverse();
           this.stopPolling();
@@ -115,8 +111,6 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
     }
   }
 
-  // --- UI ACTIONS ---
-
   onCreateNew() {
     this.viewChange.emit({ mode: 'form', sku: 'temporary' });
   }
@@ -128,7 +122,8 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
   onPublish(product: any) {
     if (product.sku?.startsWith('H')) return;
 
-    this.isLoading = true; 
+    // Use isPublishing to trigger your 🚀 overlay in the HTML
+    this.isPublishing = true; 
     this.uploadProgress = 15;
     this.cdr.detectChanges();
 
@@ -141,16 +136,23 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
 
     const currentSku = product.sku || 'NOSKU';
     const currentEmail = this.customerEmail || '';
-    const currentTitle = product.title || product.productTitle || 'product';
+    const currentTitle = product.title || 'Product';
+    const productUrl = `https://hymns.com/products/${currentSku}`;
+
+    window.parent.postMessage({
+      type: 'PRIME_BUTTON',
+      sku: currentSku,
+      title: currentTitle,
+      url: productUrl
+    }, '*');
 
     localStorage.setItem('pending_sku', currentSku);
 
     const variantId = '52656836149548'; 
     const shopDomain = '7iyyfy-u5.myshopify.com';
     
-    // Optimized Return URL with all required query params
     const returnUrl = encodeURIComponent(
-      `https://hymns.com/pages/self-publish?status=success&sku=${currentSku}&email=${encodeURIComponent(currentEmail)}&autoPublish=true`
+      `https://hymns.com/pages/self-publish?status=success&sku=${currentSku}&title=${encodeURIComponent(currentTitle)}&email=${encodeURIComponent(currentEmail)}&autoPublish=true`
     );
     
     const checkoutUrl = `https://${shopDomain}/cart/${variantId}:1?return_to=${returnUrl}&checkout[email]=${encodeURIComponent(currentEmail)}`;
@@ -165,14 +167,13 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
     const confirmDelete = confirm(`Permanently delete "${product.title || product.sku}"?`);
     if (!confirmDelete) return;
 
+    this.isDeleting = true; // Prevents the publish overlay from flashing
     this.isLoadingData = true;
     this.cdr.detectChanges();
     
     try {
-      // Use standard firstValueFrom to catch the API response
       const result = await firstValueFrom(this.productService.deleteProduct(product.sku, this.customerEmail));
 
-      // Result from postToScript is already parsed as JSON
       if (result && result.success) {
         await this.productService.deleteFromFirebase(this.customerEmail, product.sku);
         this.products = this.products.filter(p => p.sku !== product.sku);
@@ -182,6 +183,7 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
     } catch (err) {
       console.error("Delete error:", err);
     } finally {
+      this.isDeleting = false;
       this.isLoadingData = false;
       this.cdr.detectChanges();
     }
@@ -191,4 +193,19 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
     this.stopPolling();
     await this.loadUserProducts();
   }
+
+  getPreviewUrl(product: any): string {
+    if (product.previewUrl) return product.previewUrl;
+    
+    // If no previewUrl, generate one from the title
+    const title = product.title || 'Product';
+    const handle = title
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s-]/g, '')     // Remove special characters
+      .replace(/[\s_-]+/g, '-')      // Replace spaces/underscores with hyphens
+      .replace(/^-+|-+$/g, '');      // Trim hyphens from ends
+
+    return `https://hymns.com/products/${handle}`;
+  }  
 }

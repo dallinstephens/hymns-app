@@ -13,7 +13,6 @@ export class FormComponent implements OnInit, OnChanges {
   @Input() email: string = '';       
   @Input() editSku: string = 'temporary'; 
   
-  // ADJUSTED: Added cdnUrl to the type definition to resolve ts(2345)
   @Output() viewChange = new EventEmitter<{
     mode: 'dashboard' | 'form' | 'purchase', 
     sku?: string, 
@@ -30,7 +29,6 @@ export class FormComponent implements OnInit, OnChanges {
 
   fileStatus: { [key: string]: string } = {};
 
-  // Standard options lists
   settingOptions = ['Clarinet and Piano', 'Organ Book', 'Other (please specify)', 'Piano', 'SA and Piano', 'SAB and Piano', 'SATB', 'SATB and Organ', 'SATB and Piano', 'SATB and Piano or Organ', 'SSA and Piano', 'SSAA Piano or Organ', 'SSAATTB and Piano or Organ', 'SSAATTBB and Organ', 'TB and Piano', 'TTBB and Organ', 'TTBB and Piano', 'TTBB and Piano or Organ', 'Vocal Duet', 'Vocal Solo', 'Vocal Solo Book'];
   primaryUseOptions = ['Church Choir', 'Congregational', 'Vocal Solo/Special Musical Number', 'Youth', 'Primary', 'Funeral Service', 'Concert/Festival', 'Home/Family Use'];
   paper1Options = ['First Chair Pre-printed Cover - 11 X 17', 'Choral - 11 X 17', 'Piano/Vocal - 12 X 18', 'Booklet Cover - 12 X 18', 'Booklet Inside - 12 X 18', 'Letter Nice - 8.5 X 11', 'Printer Paper - 8.5 X 11'];
@@ -220,10 +218,15 @@ export class FormComponent implements OnInit, OnChanges {
 
   async onSubmit() {
     if (this.productForm.invalid) return;
+
+    window.parent.postMessage({ type: 'SCROLL_TOP' }, '*');
   
     this.isSubmitting = true;
     this.submitError = '';
     const currentSku = this.productForm.get('sku')?.value;
+    
+    // Capture the current status from the form instead of hardcoding 'unlisted'
+    const currentStatus = this.productForm.get('status')?.value || 'unlisted';
     
     this.viewChange.emit({ mode: 'purchase', sku: currentSku });
   
@@ -235,7 +238,7 @@ export class FormComponent implements OnInit, OnChanges {
         email: this.customerEmail,
         action: 'createOrUpdateProduct',
         isInitialCreate: !this.isEditMode, 
-        status: 'unlisted' 
+        status: currentStatus // ADJUSTED: Now uses currentStatus to prevent resetting active products
       };
   
       const result = await firstValueFrom(this.productService.submitForm(payload));

@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "target": "hymns-app",
     "public": "dist/hymns-app",
     "headers": [
       {

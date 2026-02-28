@@ -2,6 +2,14 @@
   "projects": {
     "default": "hymns-app-135767"
   },
-  "targets": {},
+  "targets": {
+    "hymns-app-135767": {
+      "hosting": {
+        "hymns-app": [
+          "hymns-app-135767"
+        ]
+      }
+    }
+  },
   "etags": {}
 }

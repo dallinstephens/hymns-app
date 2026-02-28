@@ -1,11 +1,11 @@
-/* --- SPINNER & OVERLAY (ALIGNED WITH HTML) --- */
+/* --- SPINNER & OVERLAY (CLEAN WHITE) --- */
 .spinner-overlay {
   position: absolute !important;
   top: 0 !important;
   left: 0 !important;
   width: 100% !important;
   height: 100% !important;
-  background-color: rgba(255, 255, 255, 0.9) !important; /* Slight transparency to see the blur */
+  background-color: #ffffff !important; /* Pure solid white */
   display: flex !important;
   justify-content: center !important;
   align-items: flex-start !important; 
@@ -19,7 +19,8 @@
   background: white;
   padding: 40px;
   border-radius: 20px;
-  box-shadow: 0 25px 70px rgba(0,0,0,0.2);
+  /* ADJUSTED: Reduced shadow size and opacity for a cleaner look */
+  box-shadow: 0 10px 30px rgba(0,0,0,0.08); 
   min-width: 400px;
   z-index: 100000;
   text-align: center;
@@ -41,7 +42,7 @@
   100% { transform: rotate(360deg); }
 }
 
-/* --- PROGRESS BAR --- */
+/* --- PROGRESS BAR (UPDATED TO INFINITE STREAM) --- */
 .progress-bar-container {
   width: 100%;
   background-color: #f0f0f0;
@@ -49,14 +50,23 @@
   margin: 20px 0;
   height: 12px;
   overflow: hidden;
+  position: relative; 
 }
 
 .progress-bar-value {
+  position: absolute;
+  top: 0;
+  left: -30%; 
+  width: 30%;  
   height: 100%;
-  background: linear-gradient(90deg, #007bff, #00c6ff);
-  transition: width 0.5s ease-in-out; 
+  background: linear-gradient(90deg, transparent, #007bff, transparent);
   border-radius: 10px;
-  width: 0%; 
+  animation: infiniteStream 1.5s infinite linear;
+}
+
+@keyframes infiniteStream {
+  0% { left: -30%; }
+  100% { left: 100%; }
 }
 
 /* --- DASHBOARD LAYOUT --- */
@@ -71,7 +81,7 @@
 
 .dashboard-container.blurred .dashboard-content,
 .dashboard-container.blurred .dashboard-header {
-  filter: blur(8px); /* Increased blur for better focus on the spinner card */
+  filter: none !important; 
   pointer-events: none;
   user-select: none;
 }
@@ -96,6 +106,7 @@
 /* --- TABLE & PRODUCTS --- */
 .product-table {
   width: 100%;
+  table-layout: fixed; 
   border-collapse: collapse;
   background: white;
   box-shadow: 0 4px 12px rgba(0,0,0,0.05);
@@ -103,10 +114,39 @@
   overflow: hidden;
 }
 
+/* Column 1: Title & Image */
+.product-table th:nth-child(1),
+.product-table td:nth-child(1) {
+  width: 35%;
+  padding-left: 20px; 
+  text-align: left;
+}
+
+/* Column 2: Status (Aligned Left to match Header) */
+.product-table th:nth-child(2),
+.product-table td:nth-child(2) {
+  width: 25%;
+  text-align: left; 
+  padding-left: 55px; /* Matches header to align button under 'S' */
+}
+
+/* Column 3: Actions (Right-aligned Group) */
+.product-table th:nth-child(3),
+.product-table td:nth-child(3) {
+  width: 40%;
+  padding-right: 20px; 
+  text-align: right;
+}
+
+/* Aligns 'ACTIONS' text above the left edge of the View buttons */
+.product-table th:nth-child(3) {
+  text-align: left !important;
+  padding-left: 15px;
+}
+
 .product-table th {
   background-color: #fcfcfc;
   padding: 15px;
-  text-align: left;
   text-transform: uppercase;
   font-size: 11px;
   font-weight: 700;
@@ -122,7 +162,7 @@
 }
 
 .row-live {
-  background-color: #f8fffb; /* Very subtle green for published rows */
+  background-color: #f8fffb; 
 }
 
 /* Product Meta Info */
@@ -133,26 +173,26 @@
 .product-sku.text-success { color: #28a745 !important; font-weight: bold; }
 
 /* --- STATUS BADGES --- */
-.status-live {
-  color: #28a745;
+.status-live, .status-pending {
   font-weight: 800;
-  background: #e6f4ea;
-  padding: 6px 14px;
+  padding: 6px 0;
   border-radius: 6px;
   font-size: 11px;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  width: 100px; 
+  margin: 0; 
+}
+
+.status-live {
+  color: #28a745;
+  background: #e6f4ea;
 }
 
 .status-pending {
   color: #f39c12;
-  font-weight: 800;
   background: #fff4e5;
-  padding: 6px 14px;
-  border-radius: 6px;
-  font-size: 11px;
-  display: inline-flex;
-  align-items: center;
 }
 
 .cover-thumb {
@@ -168,11 +208,11 @@
 .button-group {
   display: flex;
   gap: 8px;
-  justify-content: flex-end;
+  justify-content: flex-end; 
 }
 
 .btn {
-  padding: 9px 15px;
+  padding: 9px 10px;
   border: none;
   border-radius: 6px;
   cursor: pointer;
@@ -181,7 +221,9 @@
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
+  width: 105px; 
 }
 
 .btn:hover:not(:disabled) {
@@ -197,20 +239,7 @@
   transform: none;
 }
 
-.btn-create { background-color: #007bff; color: white; }
-
-.btn-refresh {
-  background-color: #f8f9fa;
-  color: #333;
-  border: 1px solid #ddd;
-}
-
-/* Make the icon inside the refresh button spin when active */
-.btn-refresh.spinning i, 
-.btn-refresh.spinning span {
-  animation: spin 1.5s linear infinite;
-  display: inline-block;
-}
+.btn-create { background-color: #007bff; color: white; width: auto !important; padding: 9px 15px; }
 
 .btn-publish { background-color: #28a745; color: white; }
 .btn-success { background-color: #f1f1f1 !important; color: #28a745 !important; cursor: default; }

@@ -10,7 +10,8 @@ import { firstValueFrom } from 'rxjs';
 export class AppComponent implements OnInit {
   title = 'hymns-app';
   
-  viewMode: 'dashboard' | 'form' = 'dashboard'; 
+  // Adjusted to include 'purchase' for state consistency
+  viewMode: 'dashboard' | 'form' | 'purchase' = 'dashboard'; 
   customerEmail: string = '';
   activeSku: string = 'temporary';
   url: string = '';
@@ -22,7 +23,26 @@ export class AppComponent implements OnInit {
     private productService: ProductService 
   ) {}
 
-  async ngOnInit() {
+async ngOnInit() {
+    window.addEventListener('message', (event) => {
+      if (event.data && event.data.type === 'CHANGE_VIEW') {
+        console.log("📥 View Change Received from Parent:", event.data.mode);
+        
+        // 1. Force state reset to Dashboard
+        this.viewMode = event.data.mode; // Switches to 'dashboard'
+        this.isLoading = false; 
+        this.keepFormAlive = false; // Reset the "stay alive" buffer
+        this.activeSku = 'temporary'; // Reset SKU context when going back to main dashboard
+        
+        // 2. Unlock the UI scroll
+        document.body.classList.remove('spinner-active');
+        
+        // 3. Update and Sync
+        this.updateUrlParams(); 
+        this.cdr.detectChanges(); // Ensure Angular updates the UI immediately
+      }
+    });
+
     const urlParams = new URLSearchParams(window.location.search);
     
     // 1. Always capture Identity first
@@ -36,7 +56,9 @@ export class AppComponent implements OnInit {
 
     // 3. PRIORITY: Check for return from Shopify
     if (status === 'success' && autoPublish === 'true' && returnSku && this.customerEmail) {
-      this.activeSku = returnSku; // Temporarily set to T-SKU while processing
+      this.activeSku = returnSku; 
+      // Ensure the dashboard polling knows we are graduating
+      localStorage.setItem('pending_sku', returnSku);
       await this.triggerFinalization(returnSku, this.customerEmail);
     } else {
       // Normal dashboard load logic
@@ -49,33 +71,32 @@ export class AppComponent implements OnInit {
 
   /**
    * Triggers the Google Script 'finalize' action to swap T-SKU to H-SKU
+   * Triggers Overlay B in the dashboard HTML
    */
   async triggerFinalization(sku: string, email: string) {
     console.log("🏁 Finalizing purchase for SKU:", sku);
+    this.viewMode = 'dashboard'; // Ensure we are on dashboard to show the overlay
     this.isLoading = true;
     document.body.classList.add('spinner-active');
     this.cdr.detectChanges();
 
     try {
-      // Calling the service method we defined earlier
       const result: any = await firstValueFrom(this.productService.finalizeProduct(sku, email));
       
       if (result && result.success) {
-        // Success! Update local SKU to the new H-number returned by the script
         this.activeSku = result.newSku || this.activeSku; 
+        localStorage.removeItem('pending_sku');
         alert(`Success! Your product is now live.\nNew SKU: ${this.activeSku}`);
       } else {
         alert('Graduation failed: ' + (result?.error || 'The server encountered an error.'));
       }
     } catch (err) {
       console.error("Finalization Error:", err);
-      alert('Communication error while activating your product. Please check your internet connection.');
+      alert('Communication error while activating your product.');
     } finally {
       this.isLoading = false;
       document.body.classList.remove('spinner-active');
       this.viewMode = 'dashboard';
-      
-      // Clean the URL so a refresh doesn't trigger graduation again
       this.updateUrlParams(); 
       this.cdr.detectChanges();
     }
@@ -87,7 +108,6 @@ export class AppComponent implements OnInit {
     success?: boolean, 
     error?: boolean 
   }) {
-    // Nav logic preserved exactly as requested
     if (event.error === true) {
       document.body.classList.remove('spinner-active');
       this.isLoading = false; 
@@ -127,7 +147,6 @@ export class AppComponent implements OnInit {
   generateProductUrl(passedUrl: string | null, productTitle: string | null) {
     if (passedUrl) {
       let decodedUrl = decodeURIComponent(passedUrl);
-      // Ensure we catch any variation of the myshopify domain
       this.url = decodedUrl.replace(/.*\.myshopify\.com/, 'https://hymns.com');
     } else if (this.activeSku !== 'temporary') {
       if (productTitle) {

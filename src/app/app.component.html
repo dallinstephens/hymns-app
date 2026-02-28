@@ -1,12 +1,12 @@
 <div class="app-container">
+  
   <app-dashboard 
-    *ngIf="viewMode === 'dashboard'"
+    *ngIf="viewMode === 'dashboard' || viewMode === 'purchase'"
     [customerEmail]="customerEmail"
     [isLoading]="isLoading"
     (viewChange)="handleViewChange($event)">
   </app-dashboard>
 
-  <!-- Keep form alive during transition using keepFormAlive OR viewMode === 'form' -->
   <app-form 
     *ngIf="viewMode === 'form' || keepFormAlive"
     [ngStyle]="{'display': viewMode === 'form' ? 'block' : 'none'}"
@@ -14,4 +14,5 @@
     [editSku]="activeSku"
     (viewChange)="handleViewChange($event)">
   </app-form>
+
 </div>
