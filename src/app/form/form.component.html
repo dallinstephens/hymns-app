@@ -15,17 +15,16 @@
 
   <form [formGroup]="productForm" (ngSubmit)="onSubmit()">
     
-    <div class="form-group">
+    <div class="form-group" [formGroup]="productForm" *ngIf="productForm.get('sku')?.value !== 'temporary'">
       <label for="sku">SKU <span class="text-danger">*</span></label>
       <input 
         type="text" 
         class="form-control" 
         id="sku" 
-        formControlName="sku" 
-        [readonly]="isEditMode"
+        formControlName="sku"
         [style.background-color]="isEditMode ? '#f8f9fa' : 'white'"
-        placeholder="Will be assigned automatically if 'temporary'">
-      <p class="help-block" *ngIf="!isEditMode">Leave as 'temporary' to generate a new T-SKU.</p>
+        placeholder="Will be assigned automatically if 'temporary'"
+        readonly>
     </div>
 
     <div class="form-group">
@@ -85,7 +84,12 @@
 
     <div class="form-group">
       <label for="youtubeLink">Enter YouTube Link</label>
-      <input type="text" class="form-control" id="youtubeLink" formControlName="youtubeLink" placeholder="Your answer">
+      <input 
+        type="text" 
+        class="form-control" 
+        id="youtubeLink" 
+        formControlName="youtubeLink"
+        placeholder="Your answer">
     </div>
 
     <div class="form-group">
@@ -236,8 +240,12 @@
           <label>Difficulty:</label>
           <div class="checkbox" *ngFor="let option of difficultyOptions">
             <label>
-              <input type="checkbox" [checked]="difficultyArray.value.includes(option)" (change)="onDifficultyChange(option, $event)"> {{option}}
+              <input 
+                type="checkbox"
+                [checked]="isDifficultySelected(option)"
+                (change)="onDifficultyChange(option, $event)"> {{option}}
             </label>
+            <!-- [checked]="difficultyArray.value.includes(option)" -->
           </div>
         </div>
       </div>
@@ -318,8 +326,13 @@
       <div style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 4px; background: #fff;">
         <div class="checkbox" *ngFor="let option of tagOptions">
           <label>
-            <input type="checkbox" [checked]="tagsArray.value.includes(option)" (change)="onTagChange(option, $event)"> {{option}}
+            <input 
+              type="checkbox"
+              name="tags"
+              [checked]="isTagSelected(option)"
+              (change)="onTagChange(option, $event)"> {{option}}
           </label>
+          <!-- [checked]="tagsArray.value.includes(option)"  -->
         </div>
       </div>
     </div>

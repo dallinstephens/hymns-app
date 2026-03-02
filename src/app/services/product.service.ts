@@ -19,11 +19,13 @@ export class ProductService {
   /**
    * Finalizes a product (Graduates T-SKU to H-SKU)
    */
-  finalizeProduct(sku: string, email: string): Observable<any> {
+  finalizeProduct(sku: string, email: string, youtubeLink: string, tags: string): Observable<any> {
     const payload = { 
       action: 'finalize', 
       sku: sku, 
-      email: email 
+      email: email,
+      youtubeLink: youtubeLink,
+      tags: tags
     };
     // Increased timeout for graduation because Shopify + Spreadsheet + Firebase takes time
     return this.postToScript(payload, 50000); 
@@ -127,11 +129,11 @@ export class ProductService {
       ...formData, 
       action: formData.action || 'createOrUpdateProduct' 
     };
-    return this.postToScript(payload, 60000); 
+    return this.postToScript(payload, 180000); 
   }
 
-  finalizePublication(targetSku: string, email: string): Observable<any> {
-    return this.finalizeProduct(targetSku, email);
+  finalizePublication(targetSku: string, email: string, youtubeLink: string = '', tags: string = ''): Observable<any> {
+    return this.finalizeProduct(targetSku, email, youtubeLink, tags);;
   }
 
   deleteProduct(targetSku: string, email: string): Observable<any> {
@@ -158,8 +160,6 @@ export class ProductService {
           throw new Error("Invalid server response format");
         }
       }),
-      // Retry once on failure to account for transient network issues during long-running script executions
-      retry(1),
       catchError(error => {
         console.error('Service Post Error:', error);
         return throwError(() => new Error(error.message || 'Server communication failed.'));
@@ -168,6 +168,10 @@ export class ProductService {
   }
 
   fileToBase64(file: File, maxWidth: number = 1200): Promise<string> {
+    if (file.size > 15 * 1024 * 1024) { 
+        return Promise.reject(new Error(`File "${file.name}" is too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Please keep files under 15MB.`));
+    }
+
     return new Promise((resolve, reject) => {
       if (!file.type.startsWith('image/')) {
         const reader = new FileReader();

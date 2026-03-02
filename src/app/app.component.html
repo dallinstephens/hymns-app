@@ -7,7 +7,8 @@
     (viewChange)="handleViewChange($event)">
   </app-dashboard>
 
-  <app-form 
+  <app-form
+    #productForm 
     *ngIf="viewMode === 'form' || keepFormAlive"
     [ngStyle]="{'display': viewMode === 'form' ? 'block' : 'none'}"
     [email]="customerEmail"

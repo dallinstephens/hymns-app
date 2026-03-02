@@ -1,6 +1,7 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, ViewChild } from '@angular/core';
 import { ProductService } from './services/product.service'; 
 import { firstValueFrom } from 'rxjs';
+import { FormComponent } from './form/form.component';
 
 @Component({
   selector: 'app-root',
@@ -17,6 +18,7 @@ export class AppComponent implements OnInit {
   url: string = '';
   isLoading: boolean = false;
   keepFormAlive: boolean = false;
+  @ViewChild('productForm') productForm!: FormComponent; 
 
   constructor(
     private cdr: ChangeDetectorRef,
@@ -79,9 +81,18 @@ async ngOnInit() {
     this.isLoading = true;
     document.body.classList.add('spinner-active');
     this.cdr.detectChanges();
+    const finalYoutube = this.productForm ? this.productForm.youtubeLink : '';
+    const finalTags = this.productForm ? this.productForm.tags : '';
 
     try {
-      const result: any = await firstValueFrom(this.productService.finalizeProduct(sku, email));
+      const result: any = await firstValueFrom(
+        this.productService.finalizeProduct(
+          sku, 
+          email,
+          finalYoutube, 
+          finalTags
+        )
+      );
       
       if (result && result.success) {
         this.activeSku = result.newSku || this.activeSku; 

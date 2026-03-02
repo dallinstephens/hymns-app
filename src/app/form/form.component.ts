@@ -11,7 +11,10 @@ import { firstValueFrom } from 'rxjs';
 })
 export class FormComponent implements OnInit, OnChanges {
   @Input() email: string = '';       
-  @Input() editSku: string = 'temporary'; 
+  @Input() editSku: string = 'temporary';
+  youtubeLink: string = '';
+  tags: string = '';
+  
   
   @Output() viewChange = new EventEmitter<{
     mode: 'dashboard' | 'form' | 'purchase', 
@@ -121,6 +124,14 @@ export class FormComponent implements OnInit, OnChanges {
       if (data) { 
         this.difficultyArray.clear();
         this.tagsArray.clear();
+
+        let rawTime = data.performanceTime || '';
+
+        // If the string contains the 1899 date junk, extract just the HH:mm
+        if (rawTime.includes('1899') || rawTime.includes('Sat Dec 30')) {
+          const match = rawTime.match(/(\d{1,2}:\d{2})/);
+          rawTime = match ? match[1] : '';
+        }        
   
         this.productForm.patchValue({
           sku: sku,
@@ -188,6 +199,20 @@ export class FormComponent implements OnInit, OnChanges {
   }
 
   get difficultyArray(): FormArray { return this.productForm.get('difficulty') as FormArray; }
+  
+  // HELPER: Checks if a specific Difficulty is in the FormArray
+  isDifficultySelected(option: string): boolean {
+    // If the array is empty (Create Mode), this returns false.
+    // If the array has values (Edit Mode), this returns true if matched.
+    return this.difficultyArray && this.difficultyArray.value.includes(option);
+  }
+
+  // HELPER: Checks if a specific Tag is in the FormArray
+  isTagSelected(option: string): boolean {
+    // The '&&' ensures we don't crash if tagsArray isn't ready yet
+    return this.tagsArray && this.tagsArray.value.includes(option);
+  }
+
   get tagsArray(): FormArray { return this.productForm.get('tags') as FormArray; }
 
   onDifficultyChange(option: string, event: any) {
@@ -196,11 +221,24 @@ export class FormComponent implements OnInit, OnChanges {
     else { const index = array.controls.findIndex(x => x.value === option); if(index > -1) array.removeAt(index); }
   }
 
+  // onTagChange(option: string, event: any) {
+  //   const array = this.tagsArray;
+  //   if (event.target.checked) { array.push(this.fb.control(option)); } 
+  //   else { const index = array.controls.findIndex(x => x.value === option); if(index > -1) array.removeAt(index); }
+  // }
+
   onTagChange(option: string, event: any) {
     const array = this.tagsArray;
-    if (event.target.checked) { array.push(this.fb.control(option)); } 
-    else { const index = array.controls.findIndex(x => x.value === option); if(index > -1) array.removeAt(index); }
-  }
+    if (event.target.checked) { 
+      array.push(this.fb.control(option)); 
+    } else { 
+      const index = array.controls.findIndex(x => x.value === option); 
+      if(index > -1) array.removeAt(index); 
+    }
+    
+    // CRITICAL: Convert the array into the string that AppComponent needs!
+    this.tags = array.value.join(', '); 
+  }  
 
   async onFileSelect(event: any, fieldName: string) {
     const file = event.target.files[0];
