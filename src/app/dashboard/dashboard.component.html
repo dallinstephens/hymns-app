@@ -53,10 +53,10 @@
         <tr *ngFor="let product of products" [class.row-live]="product.sku?.startsWith('H')">
           <td class="product-info">
             <div class="product-preview">
-              <img [src]="product.coverImageUrl || product.coverImage || 'assets/placeholder-cover.png'" 
-                   alt="Cover Image" 
-                   class="cover-thumb"
-                   onerror="this.src='assets/placeholder-cover.png'">
+              <img [src]="getSmallerCoverUrl(product.coverImageUrl || product.coverImage)" 
+                alt="Cover Image" 
+                class="cover-thumb"
+                onerror="this.src='https://placehold.jp/14/222222/ffffff/75x100.png?text=Cover%0AImage'">
               <div class="product-meta">
                 <span class="product-title">{{ product.title || 'Untitled Product' }}</span>
                 <span class="product-sku" [class.text-success]="product.sku?.startsWith('H')">

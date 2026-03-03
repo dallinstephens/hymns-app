@@ -194,6 +194,27 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
     await this.loadUserProducts();
   }
 
+  /**
+   * Optimizes the cover image for the dashboard view.
+   * Standardizes dimensions to 75x100 (Portrait).
+   */
+  getSmallerCoverUrl(url: any): string {
+    // Free dynamic placeholder with matching 75x100 dimensions
+    const webPlaceholder = 'https://placehold.jp/14/222222/ffffff/75x100.png?text=Cover%0AImage';
+
+    if (!url || typeof url !== 'string' || url === '') {
+      return webPlaceholder;
+    }
+    
+    if (url.includes('cdn.shopify.com')) {
+      // We request _75x100 to match the portrait aspect ratio of sheet music
+      return url.replace(/\.(jpg|jpeg|png|gif|webp)(?=\?|$)/i, '_75x100.$1');
+    }
+
+    // Return original (for Google Drive/Direct links)
+    return url;
+  }  
+
   getPreviewUrl(product: any): string {
     if (product.previewUrl) return product.previewUrl;
     

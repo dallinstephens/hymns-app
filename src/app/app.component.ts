@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef, ViewChild } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, ViewChild, AfterViewChecked, NgZone } from '@angular/core';
 import { ProductService } from './services/product.service'; 
 import { firstValueFrom } from 'rxjs';
 import { FormComponent } from './form/form.component';
@@ -8,10 +8,9 @@ import { FormComponent } from './form/form.component';
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
-export class AppComponent implements OnInit {
+export class AppComponent implements OnInit, AfterViewChecked {
   title = 'hymns-app';
   
-  // Adjusted to include 'purchase' for state consistency
   viewMode: 'dashboard' | 'form' | 'purchase' = 'dashboard'; 
   customerEmail: string = '';
   activeSku: string = 'temporary';
@@ -20,50 +19,74 @@ export class AppComponent implements OnInit {
   keepFormAlive: boolean = false;
   @ViewChild('productForm') productForm!: FormComponent; 
 
+  // --- NEW: Height Tracking Variables ---
+  private lastHeight = 0;
+  private isResizing = false;
+
   constructor(
     private cdr: ChangeDetectorRef,
-    private productService: ProductService 
+    private productService: ProductService,
+    private ngZone: NgZone // Added NgZone for performance-optimized height messaging
   ) {}
 
-async ngOnInit() {
+  // --- NEW: Lifecycle hook to detect and send height changes ---
+  ngAfterViewChecked() {
+    this.sendHeightToShopify();
+  }
+
+  private sendHeightToShopify() {
+    // Add a simple debouncer to prevent rapid-fire updates that cause "jumping"
+    if (this.isResizing) return;
+
+    this.ngZone.runOutsideAngular(() => {
+      // Use offsetHeight for a more stable measurement of the actual content box
+      const currentHeight = document.documentElement.offsetHeight;
+
+      // Only send message if height changed by more than 15px to avoid sub-pixel loops
+      if (Math.abs(currentHeight - this.lastHeight) > 15) {
+        this.isResizing = true;
+        this.lastHeight = currentHeight;
+
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({
+            type: 'RESIZE_IFRAME',
+            height: currentHeight
+          }, '*');
+        }
+
+        // Release the lock after 200ms to allow the next legitimate change
+        setTimeout(() => { this.isResizing = false; }, 200);
+      }
+    });
+  }
+
+  async ngOnInit() {
     window.addEventListener('message', (event) => {
       if (event.data && event.data.type === 'CHANGE_VIEW') {
         console.log("📥 View Change Received from Parent:", event.data.mode);
-        
-        // 1. Force state reset to Dashboard
-        this.viewMode = event.data.mode; // Switches to 'dashboard'
+        this.viewMode = event.data.mode; 
         this.isLoading = false; 
-        this.keepFormAlive = false; // Reset the "stay alive" buffer
-        this.activeSku = 'temporary'; // Reset SKU context when going back to main dashboard
-        
-        // 2. Unlock the UI scroll
+        this.keepFormAlive = false; 
+        this.activeSku = 'temporary'; 
         document.body.classList.remove('spinner-active');
-        
-        // 3. Update and Sync
         this.updateUrlParams(); 
-        this.cdr.detectChanges(); // Ensure Angular updates the UI immediately
+        this.cdr.detectChanges();
       }
     });
 
     const urlParams = new URLSearchParams(window.location.search);
-    
-    // 1. Always capture Identity first
     const rawEmail = urlParams.get('email');
     if (rawEmail) this.customerEmail = decodeURIComponent(rawEmail);
 
-    // 2. Capture Redirect Parameters
     const status = urlParams.get('status');
     const autoPublish = urlParams.get('autoPublish');
     const returnSku = urlParams.get('sku');
 
-    // 3. PRIORITY: Check for return from Shopify
     if (status === 'success' && autoPublish === 'true' && returnSku && this.customerEmail) {
       this.activeSku = returnSku; 
-      // Ensure the dashboard polling knows we are graduating
       localStorage.setItem('pending_sku', returnSku);
       await this.triggerFinalization(returnSku, this.customerEmail);
     } else {
-      // Normal dashboard load logic
       const capturedSku = urlParams.get('sku');
       this.activeSku = (capturedSku && capturedSku !== 'temporary') ? capturedSku : 'temporary';
       this.generateProductUrl(urlParams.get('url'), urlParams.get('title'));
@@ -71,13 +94,9 @@ async ngOnInit() {
     }
   }
 
-  /**
-   * Triggers the Google Script 'finalize' action to swap T-SKU to H-SKU
-   * Triggers Overlay B in the dashboard HTML
-   */
   async triggerFinalization(sku: string, email: string) {
     console.log("🏁 Finalizing purchase for SKU:", sku);
-    this.viewMode = 'dashboard'; // Ensure we are on dashboard to show the overlay
+    this.viewMode = 'dashboard'; 
     this.isLoading = true;
     document.body.classList.add('spinner-active');
     this.cdr.detectChanges();
@@ -86,12 +105,7 @@ async ngOnInit() {
 
     try {
       const result: any = await firstValueFrom(
-        this.productService.finalizeProduct(
-          sku, 
-          email,
-          finalYoutube, 
-          finalTags
-        )
+        this.productService.finalizeProduct(sku, email, finalYoutube, finalTags)
       );
       
       if (result && result.success) {

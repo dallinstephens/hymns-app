@@ -61,7 +61,6 @@
       <div class="col-sm-6">
         <div class="form-group">
           <label>Upload Cover Image</label>
-          <p class="help-block">Max 100 MB.</p>
           <div *ngIf="isEditMode && productForm.get('coverImageUrl')?.value" class="alert alert-info" style="padding: 5px 10px; margin-bottom: 5px; font-size: 13px;">
             <i class="glyphicon glyphicon-picture"></i> <a [href]="productForm.get('coverImageUrl')?.value" target="_blank">View Current Cover</a>
           </div>
@@ -72,7 +71,6 @@
       <div class="col-sm-6">
         <div class="form-group">
           <label>Upload Audio File</label>
-          <p class="help-block">Max 1 GB.</p>
           <div *ngIf="isEditMode && productForm.get('audioFileUrl')?.value" class="alert alert-info" style="padding: 5px 10px; margin-bottom: 5px; font-size: 13px;">
             <i class="glyphicon glyphicon-music"></i> <a [href]="productForm.get('audioFileUrl')?.value" target="_blank">Listen to Audio</a>
           </div>

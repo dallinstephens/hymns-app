@@ -5,11 +5,35 @@ firebase login --reauth
 ng build --configuration production && firebase deploy
 rm -rf .angular dist && ng build --configuration production && firebase deploy
 
-# FIREBASE_DATABASE_URL
-https://hymns-app-135767-default-rtdb.firebaseio.com/
+src/environments/environment.development.ts
+// Your Firebase Configuration
+export const environment = {
+    production: false,
+    firebase: {
+        apiKey: "",
+        authDomain: "",
+        databaseURL: "",
+        projectId: "",
+        storageBucket: "",
+        messagingSenderId: "",
+        appId: "",
+    }
+};
 
-# FIREBASE_SECRET
-gm48ZCY4zhMzAuq3iy9zjt0RzFse9ZT5jv11AG5J
+src/environments/environment.ts
+// Your Firebase Configuration
+export const environment = {
+    production: true,
+    firebase: {
+        apiKey: "",
+        authDomain: "",
+        databaseURL: "",
+        projectId: "",
+        storageBucket: "",
+        messagingSenderId: "",
+        appId: "",
+    }
+};  
 
 # Pre-filled form for testing
     this.productForm = this.fb.group({

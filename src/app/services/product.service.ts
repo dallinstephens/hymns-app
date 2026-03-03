@@ -168,18 +168,29 @@ export class ProductService {
   }
 
   fileToBase64(file: File, maxWidth: number = 1200): Promise<string> {
-    if (file.size > 15 * 1024 * 1024) { 
-        return Promise.reject(new Error(`File "${file.name}" is too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Please keep files under 15MB.`));
-    }
+    const isImage = file.type.startsWith('image/');
+    // 20MB is the "sweet spot" for 5-minute high-quality MP3s
+    const maxAudioSize = 20 * 1024 * 1024; 
 
     return new Promise((resolve, reject) => {
-      if (!file.type.startsWith('image/')) {
+      // --- HANDLE AUDIO & PDF (Non-Images) ---
+      if (!isImage) {
+        // Apply 20MB limit ONLY to audio/PDF
+        if (file.size > maxAudioSize) {
+          return reject(new Error(
+            `File "${file.name}" is too large (${(file.size / 1024 / 1024).toFixed(1)}MB). ` +
+            `Please keep audio (MP3) and PDF files under 20MB.`
+          ));
+        }
+
         const reader = new FileReader();
         reader.readAsDataURL(file);
         reader.onload = () => resolve(reader.result as string);
         reader.onerror = error => reject(error);
         return;
       }
+
+      // --- HANDLE IMAGES (Any size allowed, will be compressed) ---
       const reader = new FileReader();
       reader.readAsDataURL(file);
       reader.onload = (event: any) => {
@@ -187,11 +198,21 @@ export class ProductService {
         img.src = event.target.result;
         img.onload = () => {
           const canvas = document.createElement('canvas');
-          let width = img.width; let height = img.height;
-          if (width > maxWidth) { height = (height * maxWidth) / width; width = maxWidth; }
-          canvas.width = width; canvas.height = height;
+          let width = img.width; 
+          let height = img.height;
+          
+          if (width > maxWidth) { 
+            height = (height * maxWidth) / width; 
+            width = maxWidth; 
+          }
+          
+          canvas.width = width; 
+          canvas.height = height;
           const ctx = canvas.getContext('2d');
           ctx?.drawImage(img, 0, 0, width, height);
+          
+          // Image is converted to JPEG at 70% quality, 
+          // effectively shrinking a 15MB photo to < 1MB.
           resolve(canvas.toDataURL('image/jpeg', 0.7));
         };
       };
