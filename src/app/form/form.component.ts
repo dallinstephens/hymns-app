@@ -256,27 +256,45 @@ export class FormComponent implements OnInit, OnChanges {
 
   async onSubmit() {
     if (this.productForm.invalid) return;
-
+  
     window.parent.postMessage({ type: 'SCROLL_TOP' }, '*');
   
     this.isSubmitting = true;
     this.submitError = '';
     const currentSku = this.productForm.get('sku')?.value;
     
-    // Capture the current status from the form instead of hardcoding 'unlisted'
     const currentStatus = this.productForm.get('status')?.value || 'unlisted';
     
     this.viewChange.emit({ mode: 'purchase', sku: currentSku });
   
     try {
+      const rawValue = this.productForm.getRawValue();
+  
+      // Strip any file field that isn't a fresh Base64 upload.
+      // In edit mode, unchanged file fields contain null, a URL, or stale Base64
+      // from a previous session — all of which should be ignored by GAS.
+      // GAS's uploadFile() guard already handles null/empty, but this prevents
+      // stale Base64 strings from triggering real uploads on unchanged files.
+      const fileFields = [
+        'coverImage', 'audioFile', 'digitalCopy',
+        'thumbnail1', 'thumbnail2', 'thumbnail3', 'thumbnail4', 'thumbnail5',
+        'thumbnail6', 'thumbnail7', 'thumbnail8', 'thumbnail9', 'thumbnail10'
+      ];
+      fileFields.forEach(field => {
+        const val = rawValue[field];
+        if (!val || typeof val !== 'string' || !val.startsWith('data:')) {
+          rawValue[field] = null;
+        }
+      });
+  
       const payload = {
-        ...this.productForm.getRawValue(),
+        ...rawValue,
         difficulty: this.difficultyArray.value,
         tags: this.tagsArray.value,
         email: this.customerEmail,
         action: 'createOrUpdateProduct',
         isInitialCreate: !this.isEditMode, 
-        status: currentStatus // ADJUSTED: Now uses currentStatus to prevent resetting active products
+        status: currentStatus
       };
   
       const result = await firstValueFrom(this.productService.submitForm(payload));
