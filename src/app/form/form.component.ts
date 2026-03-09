@@ -15,13 +15,13 @@ export class FormComponent implements OnInit, OnChanges {
   youtubeLink: string = '';
   tags: string = '';
   
-  
   @Output() viewChange = new EventEmitter<{
     mode: 'dashboard' | 'form' | 'purchase', 
     sku?: string, 
     success?: boolean, 
     error?: boolean,
-    cdnUrl?: string
+    cdnUrl?: string,
+    background?: boolean
   }>();
 
   productForm!: FormGroup;
@@ -127,7 +127,6 @@ export class FormComponent implements OnInit, OnChanges {
 
         let rawTime = data.performanceTime || '';
 
-        // If the string contains the 1899 date junk, extract just the HH:mm
         if (rawTime.includes('1899') || rawTime.includes('Sat Dec 30')) {
           const match = rawTime.match(/(\d{1,2}:\d{2})/);
           rawTime = match ? match[1] : '';
@@ -200,16 +199,11 @@ export class FormComponent implements OnInit, OnChanges {
 
   get difficultyArray(): FormArray { return this.productForm.get('difficulty') as FormArray; }
   
-  // HELPER: Checks if a specific Difficulty is in the FormArray
   isDifficultySelected(option: string): boolean {
-    // If the array is empty (Create Mode), this returns false.
-    // If the array has values (Edit Mode), this returns true if matched.
     return this.difficultyArray && this.difficultyArray.value.includes(option);
   }
 
-  // HELPER: Checks if a specific Tag is in the FormArray
   isTagSelected(option: string): boolean {
-    // The '&&' ensures we don't crash if tagsArray isn't ready yet
     return this.tagsArray && this.tagsArray.value.includes(option);
   }
 
@@ -235,8 +229,6 @@ export class FormComponent implements OnInit, OnChanges {
       const index = array.controls.findIndex(x => x.value === option); 
       if(index > -1) array.removeAt(index); 
     }
-    
-    // CRITICAL: Convert the array into the string that AppComponent needs!
     this.tags = array.value.join(', '); 
   }  
 
@@ -256,25 +248,31 @@ export class FormComponent implements OnInit, OnChanges {
 
   async onSubmit() {
     if (this.productForm.invalid) return;
-  
+
     window.parent.postMessage({ type: 'SCROLL_TOP' }, '*');
-  
+
     this.isSubmitting = true;
     this.submitError = '';
     const currentSku = this.productForm.get('sku')?.value;
-    
     const currentStatus = this.productForm.get('status')?.value || 'unlisted';
-    
+
+    // Capture lastUpdated BEFORE submitting so we can detect when GAS finishes
+    let previousLastUpdated = '';
+    try {
+      if (currentSku && currentSku !== 'temporary') {
+        const existing = await this.productService.getProductBySku(this.customerEmail, currentSku);
+        previousLastUpdated = existing?.lastUpdated || '';
+      }
+    } catch (e) {
+      // New product — no previous lastUpdated, that's fine
+    }
+
     this.viewChange.emit({ mode: 'purchase', sku: currentSku });
-  
+
     try {
       const rawValue = this.productForm.getRawValue();
-  
-      // Strip any file field that isn't a fresh Base64 upload.
-      // In edit mode, unchanged file fields contain null, a URL, or stale Base64
-      // from a previous session — all of which should be ignored by GAS.
-      // GAS's uploadFile() guard already handles null/empty, but this prevents
-      // stale Base64 strings from triggering real uploads on unchanged files.
+
+      // Strip any file field that isn't a fresh Base64 upload
       const fileFields = [
         'coverImage', 'audioFile', 'digitalCopy',
         'thumbnail1', 'thumbnail2', 'thumbnail3', 'thumbnail4', 'thumbnail5',
@@ -286,7 +284,7 @@ export class FormComponent implements OnInit, OnChanges {
           rawValue[field] = null;
         }
       });
-  
+
       const payload = {
         ...rawValue,
         difficulty: this.difficultyArray.value,
@@ -296,25 +294,48 @@ export class FormComponent implements OnInit, OnChanges {
         isInitialCreate: !this.isEditMode, 
         status: currentStatus
       };
-  
+
+      // Fire the POST — returns within 15s or on timeout.
+      // GAS continues running in the background regardless.
       const result = await firstValueFrom(this.productService.submitForm(payload));
-      
+
       if (result && result.success) {
+        const skuToPoll = result.sku || currentSku;
+
+        // Go to dashboard immediately
         this.viewChange.emit({ 
           mode: 'dashboard', 
-          sku: result.sku || currentSku, 
+          sku: skuToPoll, 
           success: true,
-          cdnUrl: result.finalCoverUrl
+          cdnUrl: result.finalCoverUrl,
+          background: result.background || false
         });
-        
+
         this.productForm.reset(); 
         this.initForm(); 
+
+        // If GAS is still running in background, poll Firebase for completion
+        if (result.background) {
+          this.productService.pollForSaveCompletion(
+            this.customerEmail,
+            skuToPoll,
+            previousLastUpdated
+          ).then(() => {
+            // GAS finished — dashboard's startSavePolling already handled this
+            console.log('Background save confirmed complete.');
+          }).catch((err) => {
+            // Timed out — dashboard's startSavePolling already handled displaying the row
+            console.warn('Background save polling timed out:', err.message);
+          });
+        }
+
       } else {
         throw new Error(result?.error || 'Server reported failure');
       }
     } catch (error: any) {
       console.error("Submission Error:", error);
       this.submitError = error.message || 'An error occurred.';
+      this.fileStatus = {};
       this.viewChange.emit({ mode: 'form', sku: currentSku, error: true });
     } finally {
       this.isSubmitting = false;

@@ -17,32 +17,28 @@ export class AppComponent implements OnInit, AfterViewChecked {
   url: string = '';
   isLoading: boolean = false;
   keepFormAlive: boolean = false;
+  isSavingInBackground: boolean = false;
   @ViewChild('productForm') productForm!: FormComponent; 
 
-  // --- NEW: Height Tracking Variables ---
   private lastHeight = 0;
   private isResizing = false;
 
   constructor(
     private cdr: ChangeDetectorRef,
     private productService: ProductService,
-    private ngZone: NgZone // Added NgZone for performance-optimized height messaging
+    private ngZone: NgZone
   ) {}
 
-  // --- NEW: Lifecycle hook to detect and send height changes ---
   ngAfterViewChecked() {
     this.sendHeightToShopify();
   }
 
   private sendHeightToShopify() {
-    // Add a simple debouncer to prevent rapid-fire updates that cause "jumping"
     if (this.isResizing) return;
 
     this.ngZone.runOutsideAngular(() => {
-      // Use offsetHeight for a more stable measurement of the actual content box
       const currentHeight = document.documentElement.offsetHeight;
 
-      // Only send message if height changed by more than 15px to avoid sub-pixel loops
       if (Math.abs(currentHeight - this.lastHeight) > 15) {
         this.isResizing = true;
         this.lastHeight = currentHeight;
@@ -54,7 +50,6 @@ export class AppComponent implements OnInit, AfterViewChecked {
           }, '*');
         }
 
-        // Release the lock after 200ms to allow the next legitimate change
         setTimeout(() => { this.isResizing = false; }, 200);
       }
     });
@@ -131,7 +126,8 @@ export class AppComponent implements OnInit, AfterViewChecked {
     mode: 'dashboard' | 'form' | 'purchase', 
     sku?: string, 
     success?: boolean, 
-    error?: boolean 
+    error?: boolean,
+    background?: boolean
   }) {
     if (event.error === true) {
       document.body.classList.remove('spinner-active');
@@ -141,11 +137,19 @@ export class AppComponent implements OnInit, AfterViewChecked {
     } else if (event.success === true) {
       document.body.classList.remove('spinner-active');
       window.scrollTo(0, 0);
-      this.isLoading = false;
       this.viewMode = 'dashboard';
       this.keepFormAlive = false; 
       this.activeSku = 'temporary';
       this.updateUrlParams();
+      if (event.background) {
+        // GAS still running — keep spinner up, dashboard polls until row appears
+        this.isLoading = true;
+        this.isSavingInBackground = true;
+      } else {
+        // GAS finished fast or polling confirmed row is ready
+        this.isLoading = false;
+        this.isSavingInBackground = false;
+      }
     } else if (event.mode === 'purchase') {
       window.scrollTo(0, 0);
       document.body.classList.add('spinner-active');

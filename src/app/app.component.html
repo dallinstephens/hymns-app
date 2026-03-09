@@ -4,6 +4,7 @@
     *ngIf="viewMode === 'dashboard' || viewMode === 'purchase'"
     [customerEmail]="customerEmail"
     [isLoading]="isLoading"
+    [isSavingInBackground]="isSavingInBackground"
     (viewChange)="handleViewChange($event)">
   </app-dashboard>
 

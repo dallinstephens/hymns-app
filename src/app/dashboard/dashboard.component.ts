@@ -11,23 +11,27 @@ import { takeWhile } from 'rxjs/operators';
 })
 export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
   @Input() customerEmail: string = '';
-  @Input() isLoading: boolean = false; 
+  @Input() isLoading: boolean = false;
+  @Input() isSavingInBackground: boolean = false;
 
   @Output() viewChange = new EventEmitter<{
     mode: 'dashboard' | 'form' | 'purchase', 
     sku?: string, 
     success?: boolean, 
-    error?: boolean 
+    error?: boolean,
+    background?: boolean
   }>();
 
   products: any[] = [];
   isLoadingData = true;
-  isPublishing = false; // NEW: Controls the "Creating Product Page" overlay
-  isDeleting = false;   // NEW: Ensures overlay doesn't show during deletion
+  isPublishing = false;
+  isDeleting = false;
   uploadProgress: number = 0;
   
   private pollingSub?: Subscription;
   private isPolling = false;
+  private isSavePolling = false;
+  private savePollingTimeout?: any;
 
   constructor(
     private productService: ProductService,
@@ -44,6 +48,91 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
         if (this.customerEmail) await this.loadUserProducts();
       }
     }
+
+    if (changes['isSavingInBackground']) {
+      const isNowSaving = changes['isSavingInBackground'].currentValue;
+      if (isNowSaving === true && this.customerEmail) {
+        this.startSavePolling();
+      } else if (isNowSaving === false) {
+        this.stopSavePolling();
+      }
+    }
+  }
+
+  private startSavePolling() {
+    if (this.isSavePolling) return;
+    this.isSavePolling = true;
+
+    // Snapshot current SKUs and their lastUpdated values before save
+    const knownSkus = new Set(this.products.map((p: any) => p.sku));
+    const knownLastUpdated: { [sku: string]: string } = {};
+    this.products.forEach((p: any) => {
+      if (p.sku && p.lastUpdated) knownLastUpdated[p.sku] = p.lastUpdated;
+    });
+
+    let attempts = 0;
+    const maxAttempts = 24; // 24 x 5s = 2 minutes max
+
+    const poll = async () => {
+      if (!this.isSavePolling) return;
+      attempts++;
+
+      try {
+        const data = await this.productService.getProductsByEmail(this.customerEmail);
+
+        // CREATE: a SKU appeared that wasn't there before
+        const newRow = data.find((p: any) => !knownSkus.has(p.sku));
+
+        // EDIT: an existing SKU has a different lastUpdated than before
+        const updatedRow = data.find((p: any) => 
+          knownSkus.has(p.sku) &&
+          p.lastUpdated &&
+          knownLastUpdated[p.sku] &&
+          p.lastUpdated !== knownLastUpdated[p.sku]
+        );
+
+        if (newRow || updatedRow) {
+          this.stopSavePolling();
+          this.products = [...data].reverse();
+          this.isLoadingData = false;
+          this.viewChange.emit({ 
+            mode: 'dashboard', 
+            success: true, 
+            background: false 
+          });
+          this.cdr.detectChanges();
+          return;
+        }
+      } catch (e) {
+        console.warn('Save polling error:', e);
+      }
+
+      if (attempts >= maxAttempts) {
+        // Timed out — show dashboard anyway with whatever data we have
+        this.stopSavePolling();
+        await this.loadUserProducts();
+        this.viewChange.emit({ 
+          mode: 'dashboard', 
+          success: true, 
+          background: false 
+        });
+        return;
+      }
+
+      // Schedule next poll in 5 seconds
+      this.savePollingTimeout = setTimeout(poll, 5000);
+    };
+
+    // First poll after 5 seconds
+    this.savePollingTimeout = setTimeout(poll, 5000);
+  }
+
+  private stopSavePolling() {
+    this.isSavePolling = false;
+    if (this.savePollingTimeout) {
+      clearTimeout(this.savePollingTimeout);
+      this.savePollingTimeout = undefined;
+    }
   }
   
   async ngOnInit() {
@@ -57,6 +146,7 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
 
   ngOnDestroy() {
     this.stopPolling();
+    this.stopSavePolling();
   }
 
   private checkAndStartPolling() {
@@ -96,16 +186,20 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
 
   async loadUserProducts() {
     if (!this.customerEmail) return;
+    // console.log('loadUserProducts: starting');
     this.isLoadingData = true;
     this.cdr.detectChanges();
-
+  
     try {
+      // console.log('loadUserProducts: calling getProductsByEmail');
       const data = await this.productService.getProductsByEmail(this.customerEmail);
+      // console.log('loadUserProducts: got data, count:', data.length);
       this.products = Array.isArray(data) ? [...data].reverse() : []; 
     } catch (error) {
       console.error("Dashboard: Error loading products", error);
       this.products = [];
     } finally {
+      // console.log('loadUserProducts: finally block, setting isLoadingData = false');
       this.isLoadingData = false;
       this.cdr.detectChanges();
     }
@@ -122,7 +216,6 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
   onPublish(product: any) {
     if (product.sku?.startsWith('H')) return;
 
-    // Use isPublishing to trigger your 🚀 overlay in the HTML
     this.isPublishing = true; 
     this.uploadProgress = 15;
     this.cdr.detectChanges();
@@ -167,7 +260,9 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
     const confirmDelete = confirm(`Permanently delete "${product.title || product.sku}"?`);
     if (!confirmDelete) return;
 
-    this.isDeleting = true; // Prevents the publish overlay from flashing
+    window.parent.postMessage({ type: 'SCROLL_TOP' }, '*');
+
+    this.isDeleting = true;
     this.isLoadingData = true;
     this.cdr.detectChanges();
     
@@ -194,39 +289,41 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
     await this.loadUserProducts();
   }
 
-  /**
-   * Optimizes the cover image for the dashboard view.
-   * Standardizes dimensions to 75x100 (Portrait).
-   */
   getSmallerCoverUrl(url: any): string {
-    // Free dynamic placeholder with matching 75x100 dimensions
     const webPlaceholder = 'https://placehold.jp/14/222222/ffffff/75x100.png?text=Cover%0AImage';
-
+  
     if (!url || typeof url !== 'string' || url === '') {
       return webPlaceholder;
     }
     
     if (url.includes('cdn.shopify.com')) {
-      // We request _75x100 to match the portrait aspect ratio of sheet music
-      return url.replace(/\.(jpg|jpeg|png|gif|webp)(?=\?|$)/i, '_75x100.$1');
+      // Size transformation only works for /products/ and /collections/ paths
+      // /files/ path does not support Shopify image resizing
+      if (!url.includes('/files/')) {
+        return url.replace(/\.(jpg|jpeg|png|gif|webp)(?=\?|$)/i, '_75x100.$1');
+      }
+      return url;
     }
-
-    // Return original (for Google Drive/Direct links)
+  
     return url;
-  }  
+  } 
 
   getPreviewUrl(product: any): string {
-    if (product.previewUrl) return product.previewUrl;
+    let url = '';
     
-    // If no previewUrl, generate one from the title
-    const title = product.title || 'Product';
-    const handle = title
-      .toLowerCase()
-      .trim()
-      .replace(/[^\w\s-]/g, '')     // Remove special characters
-      .replace(/[\s_-]+/g, '-')      // Replace spaces/underscores with hyphens
-      .replace(/^-+|-+$/g, '');      // Trim hyphens from ends
-
-    return `https://hymns.com/products/${handle}`;
-  }  
+    if (product.previewUrl) {
+      url = product.previewUrl.split('?')[0]; // strip old ?t=
+    } else {
+      const title = product.title || 'Product';
+      const handle = title
+        .toLowerCase()
+        .trim()
+        .replace(/[^\w\s-]/g, '')
+        .replace(/[\s_-]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+      url = `https://hymns.com/products/${handle}`;
+    }
+  
+    return url + '?t=' + Date.now() + '#reload';
+  } 
 }

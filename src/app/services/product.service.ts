@@ -31,59 +31,56 @@ export class ProductService {
     return this.postToScript(payload, 50000); 
   }
 
-  /**
-   * Gets the list of products for the dashboard
-   */
-/**
-   * Gets the list of products for the dashboard
-   * ADJUSTED: Handles both Flat and Nested Firebase structures
-   */
   async getProductsByEmail(email: string): Promise<any[]> {
     const db = getDatabase();
     const lookupPath = this.getSafePath(email);
-    
+  
     try {
-      const userSkusRef = ref(db, `users/${lookupPath}/skus`);
-      const snapshot = await get(userSkusRef);
-      
-      if (!snapshot.exists()) return [];
-
+      // Read from lightweight dashboard index instead of full skus node
+      const dashboardRef = ref(db, `users/${lookupPath}/dashboard`);
+      const snapshot = await get(dashboardRef);
+  
+      if (!snapshot.exists()) {
+        // Fallback to skus node if dashboard index not yet populated
+        const userSkusRef = ref(db, `users/${lookupPath}/skus`);
+        const skusSnapshot = await get(userSkusRef);
+        if (!skusSnapshot.exists()) return [];
+        const rawData = skusSnapshot.val();
+        return Object.keys(rawData).map(skuKey => {
+          const entry = rawData[skuKey];
+          if (!entry || typeof entry !== 'object') {
+            return { sku: skuKey, title: `Product ${skuKey}`, status: 'unlisted', coverImageUrl: '', thumbnailUrls: [], previewUrl: '', lastUpdated: '', publishDate: '', artistName: '', setting: '' };
+          }
+          return {
+            sku: skuKey,
+            title: entry.title || entry.productTitle || `Product ${skuKey}`,
+            status: entry.status || 'unlisted',
+            coverImageUrl: entry.coverImageUrl || '',
+            thumbnailUrls: Array.isArray(entry.thumbnailUrls) ? entry.thumbnailUrls : [],
+            previewUrl: entry.previewUrl || '',
+            lastUpdated: entry.lastUpdated || '',
+            publishDate: entry.publishDate || '',
+            artistName: entry.artistName || '',
+            setting: entry.setting || ''
+          };
+        });
+      }
+  
+      // Fast path — dashboard index exists
       const rawData = snapshot.val();
       return Object.keys(rawData).map(skuKey => {
-        const entry = rawData[skuKey];
-        
-        // DETECTION LOGIC: 
-        // If 'entry' is an object that contains another object with the actual data, 
-        // we flatten it. This handles the inconsistency between v6 and older versions.
-        let details = entry;
-        if (entry && typeof entry === 'object' && !entry.title && !entry.productTitle) {
-            const firstSubKey = Object.keys(entry)[0];
-            if (entry[firstSubKey] && typeof entry[firstSubKey] === 'object') {
-                details = entry[firstSubKey];
-            }
-        }
-
-        let finalUrl = details.previewUrl || '';
-
-        if (typeof finalUrl === 'string' && finalUrl.trim().startsWith('{')) {
-          try {
-            const parsed = JSON.parse(finalUrl);
-            finalUrl = parsed.previewUrl || finalUrl;
-          } catch (e) {
-            console.warn(`Could not parse previewUrl for SKU ${skuKey}:`, e);
-          }
-        }
-
+        const entry = rawData[skuKey] || {};
         return {
-          ...details,
-          sku: skuKey, 
-          previewUrl: finalUrl,
-          status: details.status || 'unlisted',
-          // PRIORITY: Check every possible title key found in your Firebase screenshot
-          title: details.title || details.productTitle || details.Product_Title || `Product ${skuKey}`,
-          // IMAGE FIX: Use the keys confirmed in your Firebase screenshot
-          coverImageUrl: details.coverImageUrl || details.coverImage || details.imageUrl || '',
-          thumbnailUrls: Array.isArray(details.thumbnailUrls) ? details.thumbnailUrls : []
+          sku: skuKey,
+          title: entry.title || `Product ${skuKey}`,
+          status: entry.status || 'unlisted',
+          coverImageUrl: entry.coverImageUrl || '',
+          thumbnailUrls: [],
+          previewUrl: entry.previewUrl || '',
+          lastUpdated: entry.lastUpdated || '',
+          publishDate: entry.publishDate || '',
+          artistName: entry.artistName || '',
+          setting: entry.setting || ''
         };
       });
     } catch (error) {
@@ -95,7 +92,7 @@ export class ProductService {
   /**
    * Fetches single product details
    */
-   async getProductBySku(email: string, sku: string): Promise<any | null> {
+  async getProductBySku(email: string, sku: string): Promise<any | null> {
     const db = getDatabase();
     const lookupPath = this.getSafePath(email);
     const productRef = ref(db, `users/${lookupPath}/skus/${sku}`);
@@ -106,7 +103,7 @@ export class ProductService {
       return { 
         ...data, 
         sku: sku,
-        status: data.status || 'unlisted', // Safety fallback
+        status: data.status || 'unlisted',
         title: data.title || data.productTitle || '',
         audioFileUrl: data.audioFileUrl || '',
         coverImageUrl: data.coverImageUrl || '',
@@ -120,16 +117,63 @@ export class ProductService {
   async deleteFromFirebase(email: string, sku: string): Promise<void> {
     const db = getDatabase();
     const lookupPath = this.getSafePath(email);
-    const productRef = ref(db, `users/${lookupPath}/skus/${sku}`);
-    return remove(productRef);
+    
+    const skuRef = ref(db, `users/${lookupPath}/skus/${sku}`);
+    const dashboardRef = ref(db, `users/${lookupPath}/dashboard/${sku}`);
+    
+    await Promise.all([remove(skuRef), remove(dashboardRef)]);
   }
 
+  /**
+   * Fire-and-forget submit — posts to GAS and returns within 15s.
+   * GAS continues running in the background after the connection drops.
+   * Use pollForSaveCompletion() to detect when GAS is done.
+   */
   submitForm(formData: any): Observable<any> {
     const payload = { 
       ...formData, 
       action: formData.action || 'createOrUpdateProduct' 
     };
-    return this.postToScript(payload, 180000); 
+    // 15s timeout — GAS keeps running in the background after this drops
+    return this.postToScript(payload, 15000);
+  }
+
+  pollForSaveCompletion(
+    email: string,
+    sku: string,
+    previousLastUpdated: string,
+    maxWaitMs: number = 120000
+  ): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const db = getDatabase();
+      const lookupPath = this.getSafePath(email);
+      const productRef = ref(db, `users/${lookupPath}/skus/${sku}`);
+      const startTime = Date.now();
+  
+      const poll = async () => {
+        try {
+          const snapshot = await get(productRef);
+          if (snapshot.exists()) {
+            const data = snapshot.val();
+            if (data.lastUpdated && data.lastUpdated !== previousLastUpdated) {
+              resolve(data);
+              return;
+            }
+          }
+        } catch (e) {
+          console.warn('Poll error:', e);
+        }
+  
+        if (Date.now() - startTime >= maxWaitMs) {
+          reject(new Error('Save timed out — please refresh to see your changes.'));
+          return;
+        }
+  
+        setTimeout(poll, 5000);
+      };
+  
+      setTimeout(poll, 5000);
+    });
   }
 
   finalizePublication(targetSku: string, email: string, youtubeLink: string = '', tags: string = ''): Observable<any> {
@@ -150,17 +194,21 @@ export class ProductService {
     return this.http.post(this.apiUrl, JSON.stringify(payload), { headers, responseType: 'text' }).pipe(
       timeout(timeoutMs),
       map(response => {
-        // CLEANING LOGIC: Google Scripts sometimes wrap responses in extra characters or HTML if they error
         let cleaned = response.trim();
         try { 
           return JSON.parse(cleaned); 
         } catch (e) { 
-          // If it's not JSON, it might be a raw success message
           if (cleaned.toLowerCase().includes("success")) return { success: true, message: cleaned };
           throw new Error("Invalid server response format");
         }
       }),
       catchError(error => {
+        // A timeout or status 0 on submitForm is expected — GAS is still running in background.
+        // Return synthetic success so the caller proceeds to Firebase polling.
+        if (error.name === 'TimeoutError' || error.status === 0) {
+          console.log('GAS is running in background — proceeding to Firebase polling.');
+          return [{ success: true, background: true }];
+        }
         console.error('Service Post Error:', error);
         return throwError(() => new Error(error.message || 'Server communication failed.'));
       })
@@ -175,14 +223,12 @@ export class ProductService {
     return new Promise((resolve, reject) => {
       // --- HANDLE AUDIO & PDF (Non-Images) ---
       if (!isImage) {
-        // Apply 20MB limit ONLY to audio/PDF
         if (file.size > maxAudioSize) {
           return reject(new Error(
             `File "${file.name}" is too large (${(file.size / 1024 / 1024).toFixed(1)}MB). ` +
             `Please keep audio (MP3) and PDF files under 20MB.`
           ));
         }
-
         const reader = new FileReader();
         reader.readAsDataURL(file);
         reader.onload = () => resolve(reader.result as string);
@@ -210,9 +256,6 @@ export class ProductService {
           canvas.height = height;
           const ctx = canvas.getContext('2d');
           ctx?.drawImage(img, 0, 0, width, height);
-          
-          // Image is converted to JPEG at 70% quality, 
-          // effectively shrinking a 15MB photo to < 1MB.
           resolve(canvas.toDataURL('image/jpeg', 0.7));
         };
       };
