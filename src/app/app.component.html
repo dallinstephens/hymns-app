@@ -3,8 +3,12 @@
   <app-dashboard 
     *ngIf="viewMode === 'dashboard' || viewMode === 'purchase'"
     [customerEmail]="customerEmail"
+    [customerId]="customerId"
     [isLoading]="isLoading"
+    [isCheckingOut]="isCheckingOut"
     [isSavingInBackground]="isSavingInBackground"
+    [pendingProduct]="pendingProduct"
+    [previousProducts]="previousProducts"
     (viewChange)="handleViewChange($event)">
   </app-dashboard>
 
@@ -13,8 +17,17 @@
     *ngIf="viewMode === 'form' || keepFormAlive"
     [ngStyle]="{'display': viewMode === 'form' ? 'block' : 'none'}"
     [email]="customerEmail"
+    [customerId]="customerId"
     [editSku]="activeSku"
     (viewChange)="handleViewChange($event)">
   </app-form>
+
+  <app-contract
+    *ngIf="viewMode === 'contract'"
+    [customerEmail]="customerEmail"
+    [customerId]="customerId"
+    [product]="activeProduct"
+    (viewChange)="handleViewChange($event)">
+  </app-contract>   
 
 </div>

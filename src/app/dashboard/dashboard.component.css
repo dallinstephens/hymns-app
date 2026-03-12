@@ -248,3 +248,8 @@
 .btn-edit { background-color: #fd7e14; color: white; }
 .btn-delete { background-color: #dc3545; color: white; }
 .btn-view { background-color: #6c757d; color: white; text-decoration: none; }
+
+.contract-icon {
+  font-size: 2rem;
+  color: #c9a84c;
+}

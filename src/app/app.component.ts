@@ -11,14 +11,19 @@ import { FormComponent } from './form/form.component';
 export class AppComponent implements OnInit, AfterViewChecked {
   title = 'hymns-app';
   
-  viewMode: 'dashboard' | 'form' | 'purchase' = 'dashboard'; 
+  viewMode: 'dashboard' | 'form' | 'purchase' | 'contract' = 'dashboard';
+  activeProduct: any = null;
   customerEmail: string = '';
+  customerId: string = '';
   activeSku: string = 'temporary';
   url: string = '';
   isLoading: boolean = false;
+  isCheckingOut: boolean = false;
   keepFormAlive: boolean = false;
-  isSavingInBackground: boolean = false;
-  @ViewChild('productForm') productForm!: FormComponent; 
+  pendingProduct: any = null;
+  private _isSavingInBackground = false;
+  @ViewChild('productForm') productForm!: FormComponent;
+  previousProducts: any[] = [];
 
   private lastHeight = 0;
   private isResizing = false;
@@ -73,6 +78,9 @@ export class AppComponent implements OnInit, AfterViewChecked {
     const rawEmail = urlParams.get('email');
     if (rawEmail) this.customerEmail = decodeURIComponent(rawEmail);
 
+    const rawCustomerId = urlParams.get('customerId');
+    if (rawCustomerId) this.customerId = rawCustomerId;
+
     const status = urlParams.get('status');
     const autoPublish = urlParams.get('autoPublish');
     const returnSku = urlParams.get('sku');
@@ -106,6 +114,9 @@ export class AppComponent implements OnInit, AfterViewChecked {
       if (result && result.success) {
         this.activeSku = result.newSku || this.activeSku; 
         localStorage.removeItem('pending_sku');
+        if (result.previewUrl) {
+          localStorage.setItem('pending_url', result.previewUrl);
+        }        
         alert(`Success! Your product is now live.\nNew SKU: ${this.activeSku}`);
       } else {
         alert('Graduation failed: ' + (result?.error || 'The server encountered an error.'));
@@ -123,11 +134,15 @@ export class AppComponent implements OnInit, AfterViewChecked {
   }
 
   handleViewChange(event: {
-    mode: 'dashboard' | 'form' | 'purchase', 
+    mode: 'dashboard' | 'form' | 'purchase' | 'contract', 
     sku?: string, 
     success?: boolean, 
     error?: boolean,
-    background?: boolean
+    background?: boolean,
+    product?: any,
+    isCheckout?: boolean,
+    title?: string,
+    previousProducts?: any[]
   }) {
     if (event.error === true) {
       document.body.classList.remove('spinner-active');
@@ -142,11 +157,19 @@ export class AppComponent implements OnInit, AfterViewChecked {
       this.activeSku = 'temporary';
       this.updateUrlParams();
       if (event.background) {
-        // GAS still running — keep spinner up, dashboard polls until row appears
         this.isLoading = true;
         this.isSavingInBackground = true;
+        this.previousProducts = event.previousProducts || [];
+        this.pendingProduct = {
+          sku: event.sku,
+          title: event.title || '',
+          coverImageUrl: 'https://placehold.jp/14/222222/ffffff/75x100.png?text=Loading%0AImage',
+          lastUpdated: new Date().toISOString(),
+          status: 'unlisted',
+          isPending: true,
+          pendingStartTime: Date.now()
+        };
       } else {
-        // GAS finished fast or polling confirmed row is ready
         this.isLoading = false;
         this.isSavingInBackground = false;
       }
@@ -154,8 +177,15 @@ export class AppComponent implements OnInit, AfterViewChecked {
       window.scrollTo(0, 0);
       document.body.classList.add('spinner-active');
       this.isLoading = true;
+      this.isCheckingOut = event.isCheckout || false;
       this.viewMode = 'dashboard';
       this.keepFormAlive = true; 
+    } else if (event.mode === 'contract') {
+      document.body.classList.remove('spinner-active');
+      this.viewMode = 'contract';
+      this.activeProduct = event.product;
+      this.isLoading = false;
+      this.keepFormAlive = false;
     } else if (event.mode === 'form') {
       document.body.classList.remove('spinner-active');
       this.activeSku = event.sku || 'temporary';
@@ -197,7 +227,19 @@ export class AppComponent implements OnInit, AfterViewChecked {
 
   private updateUrlParams() {
     const cleanUrl = window.location.pathname + 
-      (this.customerEmail ? `?email=${encodeURIComponent(this.customerEmail)}` : '');
+      (this.customerEmail ? `?email=${encodeURIComponent(this.customerEmail)}` : '') +
+      (this.customerId ? `&customerId=${this.customerId}` : '');
     window.history.replaceState({}, '', cleanUrl);
+  }
+
+  get isSavingInBackground(): boolean {
+    return this._isSavingInBackground;
+  }
+  
+  set isSavingInBackground(value: boolean) {
+    this._isSavingInBackground = value;
+    if (!value) {
+      this.pendingProduct = null;
+    }
   }
 }

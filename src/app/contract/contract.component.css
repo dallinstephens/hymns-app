@@ -1,0 +1,205 @@
+.contract-container {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    display: flex;
+    align-items: flex-start;  /* changed from center */
+    justify-content: center;
+    padding: 10px;
+    font-family: 'Georgia', serif;
+  }
+  
+  .contract-card {
+    background: #fefefe;
+    border-radius: 4px;
+    max-width: 720px;
+    width: 100%;
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.4);
+    overflow: hidden;
+  }
+  
+  .contract-header {
+    background: linear-gradient(135deg, #1a1a2e, #0f3460);
+    padding: 10px 40px;
+    text-align: center;
+    color: white;
+  }
+  
+  .contract-icon {
+    font-size: 2rem;
+    color: #c9a84c;
+    margin-bottom: 12px;
+    letter-spacing: 8px;
+  }
+  
+  .contract-title {
+    font-size: 2.2rem;  /* increased from 1.8rem */
+    font-weight: 400;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin: 0 0 10px 0;
+    color: #ffffff;
+  }
+  
+  .contract-subtitle {
+    font-size: 1.3rem;
+    color: rgba(255,255,255,0.7);
+    margin: 0;
+    font-style: italic;
+  }
+  
+  .terms-wrapper {
+    position: relative;
+    padding: 15px 40px 0;
+  }
+  
+  .terms-scroll-hint {
+    text-align: center;
+    font-size: 1rem;
+    color: #c9a84c;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    animation: pulse 2s infinite;
+  }
+  
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+  
+  .terms-textarea {
+    width: 100%;
+    height: 280px;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    padding: 20px;
+    font-family: 'Georgia', serif;
+    font-size: 1.2rem;
+    line-height: 1.9;
+    color: #333;
+    background: #fafafa;
+    resize: none;
+    box-sizing: border-box;
+    outline: none;
+  }
+  
+  .terms-textarea:focus {
+    border-color: #0f3460;
+  }
+  
+  .signature-section {
+    padding: 15px 40px;
+  }
+  
+  .signature-label {
+    display: block;
+    font-size: 1.1rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #1a1a2e;
+    font-weight: bold;
+    margin-bottom: 8px;
+  }
+  
+  .signature-hint {
+    display: block;
+    font-size: 1rem;
+    letter-spacing: 0;
+    text-transform: none;
+    color: #888;
+    font-weight: normal;
+    margin-top: 2px;
+  }
+  
+  .signature-input {
+    width: 100%;
+    border: none;
+    border-bottom: 2px solid #1a1a2e;
+    padding: 10px 0;
+    font-family: 'Brush Script MT', 'Segoe Script', cursive;
+    font-size: 1.8rem;
+    color: #1a1a2e;
+    background: transparent;
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+  }
+  
+  .signature-input::placeholder {
+    font-family: 'Georgia', serif;
+    font-size: 1.1rem;
+    color: #bbb;
+    font-style: italic;
+  }
+  
+  .signature-input:focus {
+    border-bottom-color: #c9a84c;
+  }
+  
+  .scroll-notice {
+    margin-top: 10px;
+    font-size: 1rem;
+    color: #c0392b;
+  }
+  
+  .error-message {
+    margin: 0 40px;
+    padding: 12px;
+    background: #fdf0f0;
+    border-left: 3px solid #c0392b;
+    color: #c0392b;
+    font-size: 1rem;
+  }
+  
+  .contract-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 40px;
+    border-top: 1px solid #eee;
+    gap: 16px;
+  }
+  
+  .btn-cancel {
+    background: none;
+    border: 1px solid #ccc;
+    color: #666;
+    padding: 14px 28px;
+    border-radius: 2px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: all 0.2s;
+  }
+  
+  .btn-cancel:hover:not(:disabled) {
+    border-color: #1a1a2e;
+    color: #1a1a2e;
+  }
+  
+  .btn-agree {
+    background: linear-gradient(135deg, #1a1a2e, #0f3460);
+    color: white;
+    border: none;
+    padding: 14px 32px;
+    border-radius: 2px;
+    font-size: 1rem;  /* increased from 0.85rem */
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex: 1;
+    max-width: 320px;
+  }
+  
+  .btn-agree:hover:not(:disabled) {
+    background: linear-gradient(135deg, #0f3460, #c9a84c);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(15, 52, 96, 0.3);
+  }
+  
+  .btn-agree:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+  }

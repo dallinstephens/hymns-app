@@ -10,18 +10,21 @@ import { firstValueFrom } from 'rxjs';
   styleUrls: ['./form.component.css']
 })
 export class FormComponent implements OnInit, OnChanges {
-  @Input() email: string = '';       
+  @Input() email: string = '';
+  @Input() customerId: string = '';      
   @Input() editSku: string = 'temporary';
   youtubeLink: string = '';
   tags: string = '';
   
   @Output() viewChange = new EventEmitter<{
-    mode: 'dashboard' | 'form' | 'purchase', 
+    mode: 'dashboard' | 'form' | 'purchase' | 'contract',
     sku?: string, 
     success?: boolean, 
     error?: boolean,
     cdnUrl?: string,
-    background?: boolean
+    background?: boolean,
+    title?: string,
+    previousProducts?: any[]
   }>();
 
   productForm!: FormGroup;
@@ -119,7 +122,7 @@ export class FormComponent implements OnInit, OnChanges {
 
   async loadProductData(sku: string) {
     try {
-      const data = await this.productService.getProductBySku(this.customerEmail, sku);
+      const data = await this.productService.getProductBySku(this.customerEmail, sku, this.customerId);
       
       if (data) { 
         this.difficultyArray.clear();
@@ -193,8 +196,8 @@ export class FormComponent implements OnInit, OnChanges {
   private hydrateFormArray(formArray: FormArray, values: any) {
     formArray.clear();
     if (!values) return;
-    const vals = Array.isArray(values) ? values : (typeof values === 'string' ? values.split(',').map(v => v.trim()) : []);
-    vals.forEach(val => { if (val) formArray.push(this.fb.control(val)); });
+    const vals = Array.isArray(values) ? values : (typeof values === 'string' ? values.split(',').map((v: string) => v.trim()) : []);
+    vals.forEach((val: string) => { if (val) formArray.push(this.fb.control(val)); });
   }
 
   get difficultyArray(): FormArray { return this.productForm.get('difficulty') as FormArray; }
@@ -214,12 +217,6 @@ export class FormComponent implements OnInit, OnChanges {
     if (event.target.checked) { array.push(this.fb.control(option)); } 
     else { const index = array.controls.findIndex(x => x.value === option); if(index > -1) array.removeAt(index); }
   }
-
-  // onTagChange(option: string, event: any) {
-  //   const array = this.tagsArray;
-  //   if (event.target.checked) { array.push(this.fb.control(option)); } 
-  //   else { const index = array.controls.findIndex(x => x.value === option); if(index > -1) array.removeAt(index); }
-  // }
 
   onTagChange(option: string, event: any) {
     const array = this.tagsArray;
@@ -248,31 +245,48 @@ export class FormComponent implements OnInit, OnChanges {
 
   async onSubmit() {
     if (this.productForm.invalid) return;
-
+  
     window.parent.postMessage({ type: 'SCROLL_TOP' }, '*');
-
+  
     this.isSubmitting = true;
     this.submitError = '';
     const currentSku = this.productForm.get('sku')?.value;
+    const currentTitle = this.productForm.get('title')?.value || '';
     const currentStatus = this.productForm.get('status')?.value || 'unlisted';
-
-    // Capture lastUpdated BEFORE submitting so we can detect when GAS finishes
+  
+    // Snapshot BEFORE emitting background: true
+    let previousProducts: any[] = [];
+    try {
+      previousProducts = await this.productService.getProductsByEmail(this.customerEmail, this.customerId);
+    } catch (e) {}
+  
+    // Immediately show dashboard with pending row
+    this.viewChange.emit({
+      mode: 'dashboard',
+      sku: currentSku,
+      success: true,
+      title: currentTitle,
+      background: true,
+      previousProducts: previousProducts
+    });
+  
     let previousLastUpdated = '';
     try {
       if (currentSku && currentSku !== 'temporary') {
-        const existing = await this.productService.getProductBySku(this.customerEmail, currentSku);
+        const existing = await this.productService.getProductBySku(this.customerEmail, currentSku, this.customerId);
         previousLastUpdated = existing?.lastUpdated || '';
       }
     } catch (e) {
       // New product — no previous lastUpdated, that's fine
     }
-
-    this.viewChange.emit({ mode: 'purchase', sku: currentSku });
-
+  
+    try {
+      previousProducts = await this.productService.getProductsByEmail(this.customerEmail, this.customerId);
+    } catch (e) {}
+  
     try {
       const rawValue = this.productForm.getRawValue();
-
-      // Strip any file field that isn't a fresh Base64 upload
+  
       const fileFields = [
         'coverImage', 'audioFile', 'digitalCopy',
         'thumbnail1', 'thumbnail2', 'thumbnail3', 'thumbnail4', 'thumbnail5',
@@ -284,51 +298,62 @@ export class FormComponent implements OnInit, OnChanges {
           rawValue[field] = null;
         }
       });
-
+  
       const payload = {
         ...rawValue,
         difficulty: this.difficultyArray.value,
         tags: this.tagsArray.value,
         email: this.customerEmail,
+        customerId: this.customerId,
         action: 'createOrUpdateProduct',
         isInitialCreate: !this.isEditMode, 
         status: currentStatus
       };
-
-      // Fire the POST — returns within 15s or on timeout.
-      // GAS continues running in the background regardless.
+  
       const result = await firstValueFrom(this.productService.submitForm(payload));
-
+  
       if (result && result.success) {
         const skuToPoll = result.sku || currentSku;
-
-        // Go to dashboard immediately
-        this.viewChange.emit({ 
-          mode: 'dashboard', 
-          sku: skuToPoll, 
-          success: true,
-          cdnUrl: result.finalCoverUrl,
-          background: result.background || false
-        });
-
+  
         this.productForm.reset(); 
         this.initForm(); 
-
-        // If GAS is still running in background, poll Firebase for completion
+  
         if (result.background) {
-          this.productService.pollForSaveCompletion(
+          // GAS timed out — poll dashboard index until complete
+          this.productService.pollDashboardForCompletion(
             this.customerEmail,
-            skuToPoll,
-            previousLastUpdated
+            this.customerId,
+            previousProducts,
+            !this.isEditMode
           ).then(() => {
-            // GAS finished — dashboard's startSavePolling already handled this
-            console.log('Background save confirmed complete.');
-          }).catch((err) => {
-            // Timed out — dashboard's startSavePolling already handled displaying the row
-            console.warn('Background save polling timed out:', err.message);
+            this.viewChange.emit({
+              mode: 'dashboard',
+              sku: skuToPoll,
+              success: true,
+              title: rawValue.title || '',
+              cdnUrl: result.finalCoverUrl,
+              background: false
+            });
+          }).catch(() => {
+            this.viewChange.emit({
+              mode: 'dashboard',
+              sku: skuToPoll,
+              success: true,
+              background: false
+            });
+          });
+        } else {
+          // GAS responded fully — everything is complete
+          this.viewChange.emit({
+            mode: 'dashboard',
+            sku: skuToPoll,
+            success: true,
+            title: rawValue.title || '',
+            cdnUrl: result.finalCoverUrl,
+            background: false
           });
         }
-
+  
       } else {
         throw new Error(result?.error || 'Server reported failure');
       }

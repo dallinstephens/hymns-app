@@ -1,0 +1,105 @@
+<div class="contract-container">
+    <div class="contract-card">
+  
+      <div class="contract-header">
+        <div class="contract-icon">✦</div>
+        <h1 class="contract-title">Publishing Agreement</h1>
+        <p class="contract-subtitle">Please read and sign before publishing <strong>{{ product?.title }}</strong></p>
+      </div>
+  
+      <div class="terms-wrapper">
+        <div class="terms-scroll-hint" *ngIf="!hasScrolledToBottom">
+          ↓ Scroll to read all terms
+        </div>
+        <textarea 
+          class="terms-textarea" 
+          readonly 
+          (scroll)="onScroll($event)">
+  SELF-PUBLISHING AGREEMENT
+  
+  Last Updated: January 1, 2026
+  
+  This Self-Publishing Agreement ("Agreement") is entered into between Hymns.com ("Platform") and the individual or entity submitting content for publication ("Publisher"). By proceeding, Publisher agrees to all terms outlined herein.
+  
+  1. GRANT OF LICENSE
+  Publisher grants Hymns.com a non-exclusive, worldwide, royalty-free license to host, display, distribute, and sell the submitted sheet music content ("Content") through the Hymns.com platform and affiliated channels. Publisher retains full ownership and copyright of the Content.
+  
+  2. PUBLISHER REPRESENTATIONS
+  Publisher represents and warrants that:
+  (a) Publisher is the original creator of the Content or holds all necessary rights to publish it;
+  (b) The Content does not infringe upon any third-party intellectual property rights, including copyrights, trademarks, or patents;
+  (c) The Content does not contain any unlawful, defamatory, obscene, or otherwise objectionable material;
+  (d) All arrangements, transcriptions, or adaptations included in the Content have been properly licensed or are original works.
+  
+  3. REVENUE AND PRICING
+  Publisher acknowledges that:
+  (a) Hymns.com retains the right to set and adjust pricing in accordance with platform pricing policies;
+  (b) Revenue sharing, if applicable, will be governed by a separate Revenue Share Agreement;
+  (c) Publisher is responsible for any applicable taxes on earnings derived from sales.
+  
+  4. CONTENT STANDARDS
+  Publisher agrees that all submitted Content must meet Hymns.com quality standards, including but not limited to:
+  (a) Professional-quality notation and formatting;
+  (b) Accurate metadata including title, composer, arranger, and difficulty level;
+  (c) Appropriate categorization and tagging for platform discoverability.
+  
+  5. REMOVAL AND TERMINATION
+  Either party may terminate this Agreement with 30 days written notice. Hymns.com reserves the right to remove Content immediately if it violates platform policies or applicable law. Upon termination, all licenses granted herein shall cease, and Content will be removed from the platform within a reasonable timeframe.
+  
+  6. INDEMNIFICATION
+  Publisher agrees to indemnify, defend, and hold harmless Hymns.com, its officers, directors, employees, and agents from any claims, damages, losses, or expenses arising from Publisher's breach of this Agreement or any third-party claims relating to the Content.
+  
+  7. LIMITATION OF LIABILITY
+  To the fullest extent permitted by law, Hymns.com shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from or related to this Agreement or the use of the platform.
+  
+  8. GOVERNING LAW
+  This Agreement shall be governed by and construed in accordance with the laws of the State of Utah, without regard to conflict of law principles.
+  
+  9. ENTIRE AGREEMENT
+  This Agreement constitutes the entire agreement between the parties with respect to the subject matter herein and supersedes all prior agreements, understandings, and representations.
+  
+  10. AMENDMENTS
+  Hymns.com reserves the right to amend this Agreement at any time. Publisher will be notified of material changes and continued use of the platform constitutes acceptance of amended terms.
+  
+  By signing below, Publisher acknowledges that they have read, understood, and agree to be bound by the terms of this Self-Publishing Agreement.
+        </textarea>
+      </div>
+  
+      <div class="signature-section">
+        <label class="signature-label">
+          Digital Signature
+          <span class="signature-hint">Type your full legal name to sign</span>
+        </label>
+        <input 
+          type="text" 
+          class="signature-input"
+          [(ngModel)]="digitalSignature"
+          placeholder="Your full legal name"
+          [disabled]="isSubmitting">
+        
+        <div class="scroll-notice" *ngIf="!hasScrolledToBottom">
+          ⚠️ Please scroll through and read all terms before signing
+        </div>
+      </div>
+  
+      <div class="error-message" *ngIf="submitError">
+        {{ submitError }}
+      </div>
+  
+      <div class="contract-actions">
+        <button 
+          class="btn-cancel" 
+          (click)="onCancel()"
+          [disabled]="isSubmitting">
+          ← Back to Dashboard
+        </button>
+        <button 
+          class="btn-agree"
+          (click)="onAgreeAndProceed()"
+          [disabled]="!canProceed || isSubmitting">
+          {{ isSubmitting ? 'Processing...' : '✦ I Agree & Proceed to Checkout' }}
+        </button>
+      </div>
+  
+    </div>
+  </div>

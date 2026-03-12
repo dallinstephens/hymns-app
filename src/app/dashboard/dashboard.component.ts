@@ -11,8 +11,12 @@ import { takeWhile } from 'rxjs/operators';
 })
 export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
   @Input() customerEmail: string = '';
+  @Input() customerId: string = '';
   @Input() isLoading: boolean = false;
+  @Input() isCheckingOut: boolean = false;
+  @Input() pendingProduct: any = null;
   @Input() isSavingInBackground: boolean = false;
+  @Input() previousProducts: any[] = [];
 
   @Output() viewChange = new EventEmitter<{
     mode: 'dashboard' | 'form' | 'purchase', 
@@ -32,6 +36,7 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
   private isPolling = false;
   private isSavePolling = false;
   private savePollingTimeout?: any;
+  private countdownInterval: any;
 
   constructor(
     private productService: ProductService,
@@ -48,13 +53,15 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
         if (this.customerEmail) await this.loadUserProducts();
       }
     }
-
+  
     if (changes['isSavingInBackground']) {
+      const wasSaving = changes['isSavingInBackground'].previousValue;
       const isNowSaving = changes['isSavingInBackground'].currentValue;
       if (isNowSaving === true && this.customerEmail) {
-        this.startSavePolling();
-      } else if (isNowSaving === false) {
+        setTimeout(() => this.startSavePolling(), 15000); // wait 15s before polling
+      } else if (isNowSaving === false && wasSaving === true) {
         this.stopSavePolling();
+        if (this.customerEmail) await this.loadUserProducts();
       }
     }
   }
@@ -62,68 +69,67 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
   private startSavePolling() {
     if (this.isSavePolling) return;
     this.isSavePolling = true;
-
-    // Snapshot current SKUs and their lastUpdated values before save
-    const knownSkus = new Set(this.products.map((p: any) => p.sku));
+  
+    // Use previousProducts as baseline if available, otherwise fall back to current products
+    const baseline = this.previousProducts.length > 0 ? this.previousProducts : this.products;
+    const knownSkus = new Set(baseline.map((p: any) => p.sku));
     const knownLastUpdated: { [sku: string]: string } = {};
-    this.products.forEach((p: any) => {
+    baseline.forEach((p: any) => {
       if (p.sku && p.lastUpdated) knownLastUpdated[p.sku] = p.lastUpdated;
     });
-
+  
     let attempts = 0;
-    const maxAttempts = 24; // 24 x 5s = 2 minutes max
-
+    const maxAttempts = 24;
+  
     const poll = async () => {
       if (!this.isSavePolling) return;
       attempts++;
-
+  
       try {
-        const data = await this.productService.getProductsByEmail(this.customerEmail);
-
-        // CREATE: a SKU appeared that wasn't there before
+        const data = await this.productService.getProductsByEmail(this.customerEmail, this.customerId);
+  
         const newRow = data.find((p: any) => !knownSkus.has(p.sku));
-
-        // EDIT: an existing SKU has a different lastUpdated than before
         const updatedRow = data.find((p: any) => 
           knownSkus.has(p.sku) &&
           p.lastUpdated &&
           knownLastUpdated[p.sku] &&
           p.lastUpdated !== knownLastUpdated[p.sku]
         );
-
+  
         if (newRow || updatedRow) {
           this.stopSavePolling();
-          this.products = [...data].reverse();
-          this.isLoadingData = false;
-          this.viewChange.emit({ 
-            mode: 'dashboard', 
-            success: true, 
-            background: false 
-          });
-          this.cdr.detectChanges();
+          setTimeout(async () => {
+            this.products = [...data].reverse();
+            this.isLoadingData = false;
+            this.viewChange.emit({ 
+              mode: 'dashboard', 
+              success: true, 
+              background: false 
+            });
+            this.cdr.detectChanges();
+          }, 10000); // 10 second delay after completion detected
           return;
         }
       } catch (e) {
         console.warn('Save polling error:', e);
       }
-
+  
       if (attempts >= maxAttempts) {
-        // Timed out — show dashboard anyway with whatever data we have
         this.stopSavePolling();
-        await this.loadUserProducts();
-        this.viewChange.emit({ 
-          mode: 'dashboard', 
-          success: true, 
-          background: false 
-        });
+        setTimeout(async () => {
+          await this.loadUserProducts();
+          this.viewChange.emit({ 
+            mode: 'dashboard', 
+            success: true, 
+            background: false 
+          });
+        }, 10000);
         return;
-      }
-
-      // Schedule next poll in 5 seconds
+      }      
+  
       this.savePollingTimeout = setTimeout(poll, 5000);
     };
-
-    // First poll after 5 seconds
+  
     this.savePollingTimeout = setTimeout(poll, 5000);
   }
 
@@ -142,11 +148,17 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
     } else {
       this.isLoadingData = false;
     }
+    this.countdownInterval = setInterval(() => {
+      if (this.pendingProduct) {
+        this.cdr.detectChanges();
+      }
+    }, 1000);
   }
 
   ngOnDestroy() {
     this.stopPolling();
     this.stopSavePolling();
+    if (this.countdownInterval) clearInterval(this.countdownInterval);
   }
 
   private checkAndStartPolling() {
@@ -165,7 +177,7 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
       .pipe(takeWhile(() => this.isPolling && attempts < 25))
       .subscribe(async () => {
         attempts++;
-        const data = await this.productService.getProductsByEmail(this.customerEmail);
+        const data = await this.productService.getProductsByEmail(this.customerEmail, this.customerId);
         
         const activeHSku = data.find((p: any) => p.sku?.startsWith('H') && p.status === 'active');
         const tSkuGone = !data.some((p: any) => p.sku === oldSku);
@@ -186,20 +198,16 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
 
   async loadUserProducts() {
     if (!this.customerEmail) return;
-    // console.log('loadUserProducts: starting');
     this.isLoadingData = true;
     this.cdr.detectChanges();
   
     try {
-      // console.log('loadUserProducts: calling getProductsByEmail');
-      const data = await this.productService.getProductsByEmail(this.customerEmail);
-      // console.log('loadUserProducts: got data, count:', data.length);
+      const data = await this.productService.getProductsByEmail(this.customerEmail, this.customerId);
       this.products = Array.isArray(data) ? [...data].reverse() : []; 
     } catch (error) {
       console.error("Dashboard: Error loading products", error);
       this.products = [];
     } finally {
-      // console.log('loadUserProducts: finally block, setting isLoadingData = false');
       this.isLoadingData = false;
       this.cdr.detectChanges();
     }
@@ -215,44 +223,39 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
 
   onPublish(product: any) {
     if (product.sku?.startsWith('H')) return;
-
-    this.isPublishing = true; 
+  
+    this.isPublishing = true;
     this.uploadProgress = 15;
     this.cdr.detectChanges();
-
+  
     const progressInterval = setInterval(() => {
       if (this.uploadProgress < 90) {
         this.uploadProgress += Math.floor(Math.random() * 5) + 2;
         this.cdr.detectChanges();
       }
     }, 600);
-
+  
     const currentSku = product.sku || 'NOSKU';
     const currentEmail = this.customerEmail || '';
     const currentTitle = product.title || 'Product';
     const productUrl = `https://hymns.com/products/${currentSku}`;
-
+  
     window.parent.postMessage({
       type: 'PRIME_BUTTON',
       sku: currentSku,
       title: currentTitle,
       url: productUrl
     }, '*');
-
+  
     localStorage.setItem('pending_sku', currentSku);
-
-    const variantId = '52656836149548'; 
-    const shopDomain = '7iyyfy-u5.myshopify.com';
-    
-    const returnUrl = encodeURIComponent(
-      `https://hymns.com/pages/self-publish?status=success&sku=${currentSku}&title=${encodeURIComponent(currentTitle)}&email=${encodeURIComponent(currentEmail)}&autoPublish=true`
-    );
-    
-    const checkoutUrl = `https://${shopDomain}/cart/${variantId}:1?return_to=${returnUrl}&checkout[email]=${encodeURIComponent(currentEmail)}`;
-
+  
+    // Stop spinner and go to contract instead of checkout
     setTimeout(() => {
       clearInterval(progressInterval);
-      window.location.href = checkoutUrl;
+      this.isPublishing = false;
+      this.uploadProgress = 0;
+      this.cdr.detectChanges();
+      this.viewChange.emit({ mode: 'contract' as any, sku: currentSku, product: product } as any);
     }, 1200);
   }
 
@@ -270,7 +273,7 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
       const result = await firstValueFrom(this.productService.deleteProduct(product.sku, this.customerEmail));
 
       if (result && result.success) {
-        await this.productService.deleteFromFirebase(this.customerEmail, product.sku);
+        await this.productService.deleteFromFirebase(this.customerEmail, product.sku, this.customerId);
         this.products = this.products.filter(p => p.sku !== product.sku);
       } else {
         alert('Delete failed: ' + (result?.error || 'Unknown error'));
@@ -297,8 +300,6 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
     }
     
     if (url.includes('cdn.shopify.com')) {
-      // Size transformation only works for /products/ and /collections/ paths
-      // /files/ path does not support Shopify image resizing
       if (!url.includes('/files/')) {
         return url.replace(/\.(jpg|jpeg|png|gif|webp)(?=\?|$)/i, '_75x100.$1');
       }
@@ -312,7 +313,7 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
     let url = '';
     
     if (product.previewUrl) {
-      url = product.previewUrl.split('?')[0]; // strip old ?t=
+      url = product.previewUrl.split('?')[0];
     } else {
       const title = product.title || 'Product';
       const handle = title
@@ -325,5 +326,39 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
     }
   
     return url + '?t=' + Date.now() + '#reload';
-  } 
+  }
+
+  // Add a getter for the full product list including pending row
+  get displayProducts(): any[] {
+    if (!this.pendingProduct) return this.products;
+    
+    const existingIndex = this.products.findIndex(p => p.sku === this.pendingProduct.sku);
+    
+    if (existingIndex === -1) {
+      // New product — add pending row at top
+      return [this.pendingProduct, ...this.products];
+    } else {
+      // Edit — replace existing row with pending version
+      const updated = [...this.products];
+      updated[existingIndex] = {
+        ...this.products[existingIndex],
+        ...this.pendingProduct,
+        isPending: true
+      };
+      return updated;
+    }
+  }
+
+  getCountdown(product: any): string {
+    if (!product.isPending || !product.pendingStartTime) return '';
+    const elapsed = Math.floor((Date.now() - product.pendingStartTime) / 1000);
+    const remaining = Math.max(180 - elapsed, 0);
+    const mins = Math.floor(remaining / 60);
+    const secs = remaining % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  }
+
+  openPreview(product: any) {
+    window.open(this.getPreviewUrl(product), '_blank');
+  }
 }

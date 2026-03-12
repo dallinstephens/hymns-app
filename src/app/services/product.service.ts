@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, throwError, timeout, catchError, map, firstValueFrom, retry } from 'rxjs';
+import { getDatabase, ref, get, remove, set } from 'firebase/database';
 import { Form } from '../app.model';
-import { getDatabase, ref, get, remove } from 'firebase/database';
 
 @Injectable({
   providedIn: 'root'
@@ -12,13 +12,10 @@ export class ProductService {
 
   constructor(private http: HttpClient) {}
 
-  private getSafePath(email: string): string {
-    return email.toLowerCase().trim().replace(/\./g, ',');
+  private getSafePath(identifier: string): string {
+    return String(identifier).trim().replace(/\./g, ',');
   }
 
-  /**
-   * Finalizes a product (Graduates T-SKU to H-SKU)
-   */
   finalizeProduct(sku: string, email: string, youtubeLink: string, tags: string): Observable<any> {
     const payload = { 
       action: 'finalize', 
@@ -27,23 +24,51 @@ export class ProductService {
       youtubeLink: youtubeLink,
       tags: tags
     };
-    // Increased timeout for graduation because Shopify + Spreadsheet + Firebase takes time
     return this.postToScript(payload, 50000); 
   }
 
-  async getProductsByEmail(email: string): Promise<any[]> {
+  async getProductsByEmail(email: string, customerId: string): Promise<any[]> {
     const db = getDatabase();
-    const lookupPath = this.getSafePath(email);
+    const lookupPath = this.getSafePath(customerId || email);
   
     try {
-      // Read from lightweight dashboard index instead of full skus node
       const dashboardRef = ref(db, `users/${lookupPath}/dashboard`);
       const snapshot = await get(dashboardRef);
   
       if (!snapshot.exists()) {
-        // Fallback to skus node if dashboard index not yet populated
+        // Fallback 1: try customerId-keyed skus node
         const userSkusRef = ref(db, `users/${lookupPath}/skus`);
         const skusSnapshot = await get(userSkusRef);
+
+        // Fallback 2: try legacy email-keyed node if customerId lookup found nothing
+        if (!skusSnapshot.exists() && customerId) {
+          const emailPath = this.getSafePath(email);
+          const emailSkusRef = ref(db, `users/${emailPath}/skus`);
+          const emailSnapshot = await get(emailSkusRef);
+          if (emailSnapshot.exists()) {
+            const rawData = emailSnapshot.val();
+            return Object.keys(rawData).map(skuKey => {
+              const entry = rawData[skuKey];
+              if (!entry || typeof entry !== 'object') {
+                return { sku: skuKey, title: `Product ${skuKey}`, status: 'unlisted', coverImageUrl: '', thumbnailUrls: [], previewUrl: '', lastUpdated: '', publishDate: '', artistName: '', setting: '' };
+              }
+              return {
+                sku: skuKey,
+                title: entry.title || entry.productTitle || `Product ${skuKey}`,
+                status: entry.status || 'unlisted',
+                coverImageUrl: entry.coverImageUrl || '',
+                thumbnailUrls: Array.isArray(entry.thumbnailUrls) ? entry.thumbnailUrls : [],
+                previewUrl: entry.previewUrl || '',
+                lastUpdated: entry.lastUpdated || '',
+                publishDate: entry.publishDate || '',
+                artistName: entry.artistName || '',
+                setting: entry.setting || ''
+              };
+            });
+          }
+          return [];
+        }
+
         if (!skusSnapshot.exists()) return [];
         const rawData = skusSnapshot.val();
         return Object.keys(rawData).map(skuKey => {
@@ -66,7 +91,6 @@ export class ProductService {
         });
       }
   
-      // Fast path — dashboard index exists
       const rawData = snapshot.val();
       return Object.keys(rawData).map(skuKey => {
         const entry = rawData[skuKey] || {};
@@ -89,12 +113,9 @@ export class ProductService {
     }
   }
 
-  /**
-   * Fetches single product details
-   */
-  async getProductBySku(email: string, sku: string): Promise<any | null> {
+  async getProductBySku(email: string, sku: string, customerId: string): Promise<any | null> {
     const db = getDatabase();
-    const lookupPath = this.getSafePath(email);
+    const lookupPath = this.getSafePath(customerId || email);
     const productRef = ref(db, `users/${lookupPath}/skus/${sku}`);
     const snapshot = await get(productRef);
     
@@ -111,12 +132,33 @@ export class ProductService {
         thumbnailUrls: Array.isArray(data.thumbnailUrls) ? data.thumbnailUrls : []
       };
     }
+
+    // Fallback to legacy email-keyed node
+    if (customerId) {
+      const emailPath = this.getSafePath(email);
+      const emailRef = ref(db, `users/${emailPath}/skus/${sku}`);
+      const emailSnapshot = await get(emailRef);
+      if (emailSnapshot.exists()) {
+        const data = emailSnapshot.val();
+        return {
+          ...data,
+          sku: sku,
+          status: data.status || 'unlisted',
+          title: data.title || data.productTitle || '',
+          audioFileUrl: data.audioFileUrl || '',
+          coverImageUrl: data.coverImageUrl || '',
+          digitalCopyUrl: data.digitalCopyUrl || '',
+          thumbnailUrls: Array.isArray(data.thumbnailUrls) ? data.thumbnailUrls : []
+        };
+      }
+    }
+
     return null;
   }
 
-  async deleteFromFirebase(email: string, sku: string): Promise<void> {
+  async deleteFromFirebase(email: string, sku: string, customerId: string): Promise<void> {
     const db = getDatabase();
-    const lookupPath = this.getSafePath(email);
+    const lookupPath = this.getSafePath(customerId || email);
     
     const skuRef = ref(db, `users/${lookupPath}/skus/${sku}`);
     const dashboardRef = ref(db, `users/${lookupPath}/dashboard/${sku}`);
@@ -124,29 +166,24 @@ export class ProductService {
     await Promise.all([remove(skuRef), remove(dashboardRef)]);
   }
 
-  /**
-   * Fire-and-forget submit — posts to GAS and returns within 15s.
-   * GAS continues running in the background after the connection drops.
-   * Use pollForSaveCompletion() to detect when GAS is done.
-   */
   submitForm(formData: any): Observable<any> {
     const payload = { 
       ...formData, 
       action: formData.action || 'createOrUpdateProduct' 
     };
-    // 15s timeout — GAS keeps running in the background after this drops
-    return this.postToScript(payload, 15000);
+    return this.postToScript(payload, 120000); // 2 minutes
   }
 
   pollForSaveCompletion(
     email: string,
     sku: string,
     previousLastUpdated: string,
+    customerId: string,
     maxWaitMs: number = 120000
   ): Promise<any> {
     return new Promise((resolve, reject) => {
       const db = getDatabase();
-      const lookupPath = this.getSafePath(email);
+      const lookupPath = this.getSafePath(customerId || email);
       const productRef = ref(db, `users/${lookupPath}/skus/${sku}`);
       const startTime = Date.now();
   
@@ -155,7 +192,11 @@ export class ProductService {
           const snapshot = await get(productRef);
           if (snapshot.exists()) {
             const data = snapshot.val();
-            if (data.lastUpdated && data.lastUpdated !== previousLastUpdated) {
+            const lastUpdatedChanged = data.lastUpdated && data.lastUpdated !== previousLastUpdated;
+            const hasCover = data.coverImageUrl && data.coverImageUrl.length > 0;
+            const cdnReady = !hasCover || data.coverImageUrl.includes('cdn.shopify.com');
+  
+            if (lastUpdatedChanged && cdnReady) {
               resolve(data);
               return;
             }
@@ -169,15 +210,62 @@ export class ProductService {
           return;
         }
   
+        setTimeout(poll, 3000);
+      };
+  
+      setTimeout(poll, 3000);
+    });
+  }
+
+  pollDashboardForCompletion(
+    email: string,
+    customerId: string,
+    previousProducts: any[],
+    isNewProduct: boolean,
+    maxWaitMs: number = 180000
+  ): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const startTime = Date.now();
+  
+      const poll = async () => {
+        try {
+          const current = await this.getProductsByEmail(email, customerId);
+          
+          if (isNewProduct) {
+            // For new products — check if count increased
+            if (current.length > previousProducts.length) {
+              resolve(current);
+              return;
+            }
+          } else {
+            // For edits — check if any lastUpdated changed
+            const changed = current.some(curr => {
+              const prev = previousProducts.find(p => p.sku === curr.sku);
+              return prev && curr.lastUpdated !== prev.lastUpdated;
+            });
+            if (changed) {
+              resolve(current);
+              return;
+            }
+          }
+        } catch (e) {
+          console.warn('Dashboard poll error:', e);
+        }
+  
+        if (Date.now() - startTime >= maxWaitMs) {
+          reject(new Error('Save timed out — please refresh to see your changes.'));
+          return;
+        }
+  
         setTimeout(poll, 5000);
       };
   
       setTimeout(poll, 5000);
     });
-  }
+  }  
 
   finalizePublication(targetSku: string, email: string, youtubeLink: string = '', tags: string = ''): Observable<any> {
-    return this.finalizeProduct(targetSku, email, youtubeLink, tags);;
+    return this.finalizeProduct(targetSku, email, youtubeLink, tags);
   }
 
   deleteProduct(targetSku: string, email: string): Observable<any> {
@@ -185,10 +273,6 @@ export class ProductService {
     return this.postToScript(payload, 30000);
   }
 
-  /**
-   * Centralized POST handler
-   * ADJUSTED: Improved JSON cleaning to handle Google Script's specific response formatting
-   */
   private postToScript(payload: any, timeoutMs: number = 25000): Observable<any> {
     const headers = new HttpHeaders({ 'Content-Type': 'text/plain' });
     return this.http.post(this.apiUrl, JSON.stringify(payload), { headers, responseType: 'text' }).pipe(
@@ -203,8 +287,6 @@ export class ProductService {
         }
       }),
       catchError(error => {
-        // A timeout or status 0 on submitForm is expected — GAS is still running in background.
-        // Return synthetic success so the caller proceeds to Firebase polling.
         if (error.name === 'TimeoutError' || error.status === 0) {
           console.log('GAS is running in background — proceeding to Firebase polling.');
           return [{ success: true, background: true }];
@@ -217,11 +299,9 @@ export class ProductService {
 
   fileToBase64(file: File, maxWidth: number = 1200): Promise<string> {
     const isImage = file.type.startsWith('image/');
-    // 20MB is the "sweet spot" for 5-minute high-quality MP3s
     const maxAudioSize = 20 * 1024 * 1024; 
 
     return new Promise((resolve, reject) => {
-      // --- HANDLE AUDIO & PDF (Non-Images) ---
       if (!isImage) {
         if (file.size > maxAudioSize) {
           return reject(new Error(
@@ -236,7 +316,6 @@ export class ProductService {
         return;
       }
 
-      // --- HANDLE IMAGES (Any size allowed, will be compressed) ---
       const reader = new FileReader();
       reader.readAsDataURL(file);
       reader.onload = (event: any) => {
@@ -260,6 +339,22 @@ export class ProductService {
         };
       };
       reader.onerror = error => reject(error);
+    });
+  }
+
+  async saveDigitalSignature(email: string, customerId: string, sku: string, signature: string): Promise<void> {
+    const db = getDatabase();
+    const lookupPath = this.getSafePath(customerId || email);
+    const signatureRef = ref(db, `users/${lookupPath}/skus/${sku}/digitalSignature`);
+    
+    const now = new Date();
+    const formatted = now.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }).replace(/\//g, '-')
+      + ' '
+      + now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  
+    await set(signatureRef, {
+      signature: signature,
+      signedAt: formatted
     });
   }
 }

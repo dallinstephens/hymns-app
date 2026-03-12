@@ -3,7 +3,7 @@
   <div *ngIf="isPublishing" class="spinner-overlay">
     <div class="spinner-card">
       <div class="spinner"></div>
-      <h2>🚀 Loading Checkout...</h2>
+      <h2><span class="contract-icon">✦</span> Loading Publishing Agreement...</h2>
       <p class="lead">Please wait...</p>
       <div class="progress-bar-container">
         <div class="progress-bar-value progress-stream-active"></div>
@@ -11,7 +11,7 @@
     </div>
   </div>
 
-  <div *ngIf="isLoading && !isPublishing && !isDeleting" class="spinner-overlay">
+  <!-- <div *ngIf="isLoading && !isPublishing && !isDeleting && !isCheckingOut" class="spinner-overlay">
     <div class="spinner-card">
       <div class="spinner"></div>
       <h2>🎵 Preparing Your Song...</h2>
@@ -20,7 +20,16 @@
         <div class="progress-bar-value progress-stream-active"></div>
       </div>
     </div>
-  </div>
+  </div> -->
+
+  <!-- Checkout spinner -->
+  <div *ngIf="isLoading && isCheckingOut" class="spinner-overlay">
+    <div class="spinner-card">
+      <div class="spinner"></div>
+      <h2>⏳ Loading Checkout...</h2>
+      <p class="lead">You will be redirected shortly.</p>
+    </div>
+  </div>  
 
   <div class="dashboard-header">
     <div class="header-text">
@@ -50,7 +59,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let product of products" [class.row-live]="product.sku?.startsWith('H')">
+        <tr *ngFor="let product of displayProducts" [class.row-live]="product.sku?.startsWith('H')">
           <td class="product-info">
             <div class="product-preview">
               <img [src]="getSmallerCoverUrl(product.coverImageUrl || product.coverImage)" 
@@ -70,7 +79,14 @@
           </td>
           
           <td class="product-status">
-            <span [class.status-live]="product.sku?.startsWith('H')" 
+            <div *ngIf="product.isPending">
+              <div class="progress-bar-container" style="width: 120px;">
+                <div class="progress-bar-value progress-stream-active"></div>
+              </div>
+              <span class="countdown-timer">{{ getCountdown(product) }}</span>
+            </div>
+            <span *ngIf="!product.isPending"
+                  [class.status-live]="product.sku?.startsWith('H')" 
                   [class.status-pending]="!product.sku?.startsWith('H')">
               {{ product.sku?.startsWith('H') ? '● Live' : '○ Pending' }}
             </span>
@@ -78,29 +94,29 @@
 
           <td class="product-actions">
             <div class="button-group">
-              <a [href]="getPreviewUrl(product)" 
-                target="_blank" 
-                class="btn btn-view" 
-                title="View on Store">
+              <button class="btn btn-view" 
+              [disabled]="product.isPending"
+              (click)="!product.isPending && openPreview(product)"
+              title="View on Store">
                 👁️ View
-              </a>
+              </button>
               
               <button class="btn btn-edit" 
-                      [disabled]="isLoading" 
+                      [disabled]="product.isPending" 
                       (click)="onEdit(product.sku)" 
                       title="Edit Details">
                 📝 Edit
               </button>
               
               <button class="btn btn-delete" 
-                      [disabled]="isLoading" 
+                      [disabled]="product.isPending" 
                       (click)="onDelete(product)" 
                       title="Remove Everywhere">
                 🗑️ Delete
               </button>
               
               <button class="btn btn-publish" 
-                      [disabled]="isLoading || product.sku?.startsWith('H')" 
+                      [disabled]="product.isPending || product.sku?.startsWith('H')" 
                       (click)="onPublish(product)" 
                       [class.btn-success]="product.sku?.startsWith('H')"
                       [title]="product.sku?.startsWith('H') ? 'Already Live' : 'Ready to Sell'">
