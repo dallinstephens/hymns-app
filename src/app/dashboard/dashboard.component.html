@@ -38,7 +38,7 @@
     </div>
 
     <div class="header-actions">
-      <button class="btn btn-create" (click)="onCreateNew()" [disabled]="isLoading">
+      <button class="btn btn-create" (click)="onCreateNew()" [disabled]="isLoading && !isSavingInBackground">
         ➕ Create New Product
       </button>
     </div>

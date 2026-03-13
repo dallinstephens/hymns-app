@@ -17,6 +17,7 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
   @Input() pendingProduct: any = null;
   @Input() isSavingInBackground: boolean = false;
   @Input() previousProducts: any[] = [];
+  @Input() isEditSave: boolean = false;
 
   @Output() viewChange = new EventEmitter<{
     mode: 'dashboard' | 'form' | 'purchase', 
@@ -98,6 +99,7 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
   
         if (newRow || updatedRow) {
           this.stopSavePolling();
+          const delay = this.isEditSave ? 30000 : 0;
           setTimeout(async () => {
             this.products = [...data].reverse();
             this.isLoadingData = false;
@@ -107,7 +109,7 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
               background: false 
             });
             this.cdr.detectChanges();
-          }, 10000); // 10 second delay after completion detected
+          }, delay);
           return;
         }
       } catch (e) {
@@ -116,6 +118,7 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
   
       if (attempts >= maxAttempts) {
         this.stopSavePolling();
+        const delay = this.isEditSave ? 30000 : 0;
         setTimeout(async () => {
           await this.loadUserProducts();
           this.viewChange.emit({ 
@@ -123,9 +126,9 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
             success: true, 
             background: false 
           });
-        }, 10000);
+        }, delay);
         return;
-      }      
+      }   
   
       this.savePollingTimeout = setTimeout(poll, 5000);
     };
@@ -352,7 +355,8 @@ export class DashboardComponent implements OnInit, OnChanges, OnDestroy {
   getCountdown(product: any): string {
     if (!product.isPending || !product.pendingStartTime) return '';
     const elapsed = Math.floor((Date.now() - product.pendingStartTime) / 1000);
-    const remaining = Math.max(180 - elapsed, 0);
+    const remaining = Math.max(120 - elapsed, 0); // 3 minute countdown timer in dashboard
+    if (remaining === 0) return 'Almost done...';
     const mins = Math.floor(remaining / 60);
     const secs = remaining % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;

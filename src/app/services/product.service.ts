@@ -16,15 +16,16 @@ export class ProductService {
     return String(identifier).trim().replace(/\./g, ',');
   }
 
-  finalizeProduct(sku: string, email: string, youtubeLink: string, tags: string): Observable<any> {
+  finalizeProduct(sku: string, email: string, youtubeLink: string, tags: string, customerId: string): Observable<any> {
     const payload = { 
       action: 'finalize', 
       sku: sku, 
       email: email,
       youtubeLink: youtubeLink,
-      tags: tags
+      tags: tags,
+      customerId: customerId
     };
-    return this.postToScript(payload, 50000); 
+    return this.postToScript(payload, 180000); 
   }
 
   async getProductsByEmail(email: string, customerId: string): Promise<any[]> {
@@ -171,7 +172,7 @@ export class ProductService {
       ...formData, 
       action: formData.action || 'createOrUpdateProduct' 
     };
-    return this.postToScript(payload, 120000); // 2 minutes
+    return this.postToScript(payload, 180000); // 3 minutes - shows error to user if 3 minutes used up
   }
 
   pollForSaveCompletion(
@@ -179,7 +180,7 @@ export class ProductService {
     sku: string,
     previousLastUpdated: string,
     customerId: string,
-    maxWaitMs: number = 120000
+    maxWaitMs: number = 180000 // 3 minutes
   ): Promise<any> {
     return new Promise((resolve, reject) => {
       const db = getDatabase();
@@ -263,10 +264,6 @@ export class ProductService {
       setTimeout(poll, 5000);
     });
   }  
-
-  finalizePublication(targetSku: string, email: string, youtubeLink: string = '', tags: string = ''): Observable<any> {
-    return this.finalizeProduct(targetSku, email, youtubeLink, tags);
-  }
 
   deleteProduct(targetSku: string, email: string): Observable<any> {
     const payload = { action: 'delete', sku: targetSku, email: email };

@@ -24,7 +24,8 @@ export class FormComponent implements OnInit, OnChanges {
     cdnUrl?: string,
     background?: boolean,
     title?: string,
-    previousProducts?: any[]
+    previousProducts?: any[],
+    isEdit?: boolean
   }>();
 
   productForm!: FormGroup;
@@ -267,7 +268,8 @@ export class FormComponent implements OnInit, OnChanges {
       success: true,
       title: currentTitle,
       background: true,
-      previousProducts: previousProducts
+      previousProducts: previousProducts,
+      isEdit: this.isEditMode
     });
   
     let previousLastUpdated = '';

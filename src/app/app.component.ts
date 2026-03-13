@@ -24,7 +24,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
   private _isSavingInBackground = false;
   @ViewChild('productForm') productForm!: FormComponent;
   previousProducts: any[] = [];
-
+  isEditSave: boolean = false;
   private lastHeight = 0;
   private isResizing = false;
 
@@ -108,7 +108,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
 
     try {
       const result: any = await firstValueFrom(
-        this.productService.finalizeProduct(sku, email, finalYoutube, finalTags)
+        this.productService.finalizeProduct(sku, email, finalYoutube, finalTags, this.customerId)
       );
       
       if (result && result.success) {
@@ -142,7 +142,8 @@ export class AppComponent implements OnInit, AfterViewChecked {
     product?: any,
     isCheckout?: boolean,
     title?: string,
-    previousProducts?: any[]
+    previousProducts?: any[],
+    isEdit?: boolean
   }) {
     if (event.error === true) {
       document.body.classList.remove('spinner-active');
@@ -160,6 +161,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
         this.isLoading = true;
         this.isSavingInBackground = true;
         this.previousProducts = event.previousProducts || [];
+        this.isEditSave = event.isEdit || false;
         this.pendingProduct = {
           sku: event.sku,
           title: event.title || '',

@@ -1,6 +1,10 @@
 # login to firebase
 firebase login --reauth
 
+# git commands to get remote github to overwrite app folder only
+git fetch origin
+git checkout origin/main -- src/app
+
 # update
 ng build --configuration production && firebase deploy
 rm -rf .angular dist && ng build --configuration production && firebase deploy

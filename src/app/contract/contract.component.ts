@@ -58,6 +58,9 @@ export class ContractComponent implements OnInit {
         this.product.sku,
         this.digitalSignature.trim()
       );
+
+      // Scroll to top before switching view
+      window.parent.postMessage({ type: 'SCROLL_TOP' }, '*');
   
       // Emit purchase mode to trigger spinner in app.component
       this.viewChange.emit({ mode: 'purchase', sku: this.product.sku, isCheckout: true } as any);
